@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "Politick",
+    "slug": "politick-mobile",
+    "scheme": "politick",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#F7F6F2",
+    "plugins": ["expo-router"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.politick.mobile"
+    },
+    "android": {
+      "package": "app.politick.mobile",
+      "adaptiveIcon": {
+        "backgroundColor": "#F7F6F2",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}

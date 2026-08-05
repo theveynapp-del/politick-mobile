@@ -1,0 +1,42 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const KEYS = {
+  onboardingComplete: "politick.onboardingComplete",
+  zip: "politick.zip",
+  topics: "politick.topics",
+  notificationsEnabled: "politick.notificationsEnabled",
+} as const;
+
+export async function getOnboardingComplete(): Promise<boolean> {
+  return (await AsyncStorage.getItem(KEYS.onboardingComplete)) === "true";
+}
+
+export async function setOnboardingComplete(value: boolean) {
+  await AsyncStorage.setItem(KEYS.onboardingComplete, value ? "true" : "false");
+}
+
+export async function getStoredZip(): Promise<string | null> {
+  return AsyncStorage.getItem(KEYS.zip);
+}
+
+export async function setStoredZip(zip: string) {
+  await AsyncStorage.setItem(KEYS.zip, zip);
+}
+
+export async function getStoredTopics(): Promise<string[]> {
+  const raw = await AsyncStorage.getItem(KEYS.topics);
+  return raw ? JSON.parse(raw) : [];
+}
+
+export async function setStoredTopics(topics: string[]) {
+  await AsyncStorage.setItem(KEYS.topics, JSON.stringify(topics));
+}
+
+export async function getNotificationsEnabled(): Promise<boolean> {
+  const raw = await AsyncStorage.getItem(KEYS.notificationsEnabled);
+  return raw === null ? true : raw === "true"; // default on, matches the prototype
+}
+
+export async function setNotificationsEnabled(value: boolean) {
+  await AsyncStorage.setItem(KEYS.notificationsEnabled, value ? "true" : "false");
+}
