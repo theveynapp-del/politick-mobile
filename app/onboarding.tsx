@@ -26,12 +26,16 @@ const STEP_ORDER: Step[] = ["welcome", "zip", "confirm", "interests", "notificat
 const TOPIC_OPTIONS = [
   "Local government",
   "Economy",
-  "Education",
   "Healthcare",
+  "Education",
+  "Housing",
+  "Immigration",
+  "Trade",
   "World affairs",
   "Climate",
   "Technology",
   "Elections",
+  "Taxes",
 ];
 
 const CONFIRM_TABS: RepLevel[] = ["Local", "State", "Federal"];
@@ -131,8 +135,10 @@ export default function OnboardingScreen() {
 
   // Mirrors the spec's `@media (max-height: 820px)` block — tightens the
   // location screen's vertical rhythm on shorter devices (e.g. 375x812).
-  const { height: windowHeight } = useWindowDimensions();
+  const { height: windowHeight, width: windowWidth } = useWindowDimensions();
   const compact = windowHeight <= 820;
+  // Spec: at 375px wide, drop the signal screen's gutter from 24px to 20px.
+  const narrow = windowWidth <= 375;
 
   // The wrapping SafeAreaView already applies the device inset. This tops it
   // up to the spec's `max(20px, env(safe-area-inset-*))` floor, which matters
@@ -216,7 +222,7 @@ export default function OnboardingScreen() {
       {/* The location and representatives screens render their own header
           inside their content column (28px gutter) to keep it aligned with
           their copy, so they opt out of the shared one. */}
-      {step !== "welcome" && step !== "zip" && step !== "confirm" && (
+      {step !== "welcome" && step !== "zip" && step !== "confirm" && step !== "interests" && (
         <View style={styles.stepHeader}>
           <Pressable onPress={goBack} hitSlop={8}>
             <Text style={styles.backArrow}>{"\u2190"}</Text>
@@ -372,7 +378,15 @@ export default function OnboardingScreen() {
 
       {step === "confirm" && (
         <View style={[styles.repsScreen, { paddingTop: topFloor }]}>
-          <View style={styles.repsContent}>
+          {/* Scrollable so the footer stays reachable. Three federal reps fit
+              without scrolling as the spec expects, but a Local tab can carry
+              eight or more officials, which previously pushed "Looks Right"
+              below the fold with no way to reach it. */}
+          <ScrollView
+            style={styles.repsScroll}
+            contentContainerStyle={styles.repsContent}
+            showsVerticalScrollIndicator={false}
+          >
             <StepHeaderRow stepNumber={stepNumber} compact={compact} onBack={goBack} />
 
             <Text style={[styles.repsHeadline, compact && styles.repsHeadlineCompact]}>
@@ -445,7 +459,7 @@ export default function OnboardingScreen() {
                 ))
               )}
             </View>
-          </View>
+          </ScrollView>
 
           <View style={styles.repsFooter}>
             <Pressable
@@ -468,30 +482,62 @@ export default function OnboardingScreen() {
       )}
 
       {step === "interests" && (
-        <View style={styles.page}>
-          <Text style={styles.eyebrow}>CHOOSE YOUR SIGNAL</Text>
-          <Text style={styles.h1}>What should Politick prioritize?</Text>
-          <Text style={styles.bodyMuted}>
-            Select a few topics. You&rsquo;ll still receive a balanced daily briefing.
-          </Text>
-          <View style={styles.chipsWrap}>
-            {TOPIC_OPTIONS.map((topic) => {
-              const selected = topics.includes(topic);
-              return (
-                <Pressable
-                  key={topic}
-                  onPress={() => toggleTopic(topic)}
-                  style={[styles.chip, selected && styles.chipSelected]}
-                >
-                  <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{topic}</Text>
-                </Pressable>
-              );
-            })}
+        <View style={[styles.signalScreen, { paddingTop: topFloor }]}>
+          <View style={[styles.signalContent, narrow && styles.signalContentNarrow]}>
+            <View style={styles.signalTopRow}>
+              <Pressable
+                onPress={goBack}
+                hitSlop={12}
+                accessibilityRole="button"
+                accessibilityLabel="Back"
+                style={styles.signalBackBtn}
+              >
+                <ArrowLeft size={24} color="#101418" strokeWidth={1.8} />
+              </Pressable>
+              <Text style={styles.signalProgress}>
+                Onboarding {stepNumber} of {STEP_ORDER.length}
+              </Text>
+            </View>
+
+            <Text style={styles.signalSectionLabel}>CHOOSE YOUR SIGNAL</Text>
+            <Text style={styles.signalHeadline}>What should Politick prioritize?</Text>
+            <Text style={styles.signalSupporting}>
+              Select a few topics. You&rsquo;ll still receive a balanced daily briefing.
+            </Text>
+
+            <View style={styles.chipWrap}>
+              {TOPIC_OPTIONS.map((topic) => {
+                const selected = topics.includes(topic);
+                return (
+                  <Pressable
+                    key={topic}
+                    onPress={() => toggleTopic(topic)}
+                    // Chips are 40px tall per spec; hitSlop brings the real
+                    // touch target up to the 44px accessibility minimum.
+                    hitSlop={{ top: 2, bottom: 2 }}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                    accessibilityLabel={topic}
+                    style={[styles.topicChip, selected && styles.topicChipSelected]}
+                  >
+                    <Text style={[styles.topicChipText, selected && styles.topicChipTextSelected]}>
+                      {topic}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
           </View>
-          <View style={{ flex: 1 }} />
-          <Button variant="Primary" onPress={() => setStep("notifications")}>
-            Continue
-          </Button>
+
+          <View style={[styles.signalFooter, narrow && styles.signalContentNarrow]}>
+            <Pressable
+              style={({ pressed }) => [styles.signalButton, pressed && styles.signalButtonPressed]}
+              accessibilityRole="button"
+              onPress={() => setStep("notifications")}
+            >
+              <Text style={styles.signalButtonText}>Continue</Text>
+            </Pressable>
+          </View>
         </View>
       )}
 
@@ -644,7 +690,8 @@ const styles = StyleSheet.create({
 
   /* ---------- Onboarding 3: representatives (scoped to this screen) ---------- */
   repsScreen: { flex: 1, backgroundColor: color.light.canvas },
-  repsContent: { paddingHorizontal: 28 },
+  repsScroll: { flex: 1 },
+  repsContent: { paddingHorizontal: 28, paddingBottom: 24 },
 
   repsHeadline: { marginTop: 38, fontSize: 30, lineHeight: 36, fontWeight: "700", color: "#101418", letterSpacing: -0.55 },
   repsHeadlineCompact: { marginTop: 30 },
@@ -706,7 +753,9 @@ const styles = StyleSheet.create({
   repEmptyRow: { minHeight: 100, alignItems: "center", justifyContent: "center", paddingHorizontal: 20 },
   repEmptyText: { fontSize: 14, lineHeight: 20, color: "#5D6670", textAlign: "center" },
 
-  repsFooter: { marginTop: "auto", paddingHorizontal: 28, paddingBottom: 20 },
+  // No marginTop:auto — the ScrollView above takes the free space, so the
+  // footer stays pinned to the bottom at any list length.
+  repsFooter: { paddingHorizontal: 28, paddingTop: 4, paddingBottom: 20 },
   primaryButton: {
     height: 58,
     borderRadius: 12,
@@ -723,6 +772,54 @@ const styles = StyleSheet.create({
   primaryButtonText: { fontSize: 17, lineHeight: 22, fontWeight: "600", color: "#FFFFFF" },
   secondaryAction: { minHeight: 44, marginTop: 14, alignItems: "center", justifyContent: "center" },
   secondaryActionText: { fontSize: 15, lineHeight: 20, fontWeight: "600", color: "#101418" },
+
+  /* ---------- Onboarding 4: choose your signal (scoped to this screen) ---------- */
+  // This screen's spec uses a 24px gutter and #101418 progress text, where
+  // screens 2-3 use 28px and #41484F — hence its own header and styles.
+  signalScreen: { flex: 1, backgroundColor: color.light.canvas },
+  signalContent: { paddingHorizontal: 24 },
+  signalContentNarrow: { paddingHorizontal: 20 },
+
+  signalTopRow: { height: 44, flexDirection: "row", alignItems: "center", gap: 12 },
+  signalBackBtn: { width: 24, height: 24, alignItems: "center", justifyContent: "center" },
+  signalProgress: { fontSize: 14, lineHeight: 20, fontWeight: "600", color: "#101418" },
+
+  signalSectionLabel: {
+    marginTop: 20,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "700",
+    letterSpacing: 0.4,
+    color: "#0D5F5B",
+  },
+  signalHeadline: { marginTop: 8, fontSize: 28, lineHeight: 34, fontWeight: "700", letterSpacing: -0.5, color: "#101418" },
+  signalSupporting: { marginTop: 12, fontSize: 16, lineHeight: 22, fontWeight: "400", color: "#5D6670" },
+
+  chipWrap: { marginTop: 24, flexDirection: "row", flexWrap: "wrap", rowGap: 12, columnGap: 10 },
+  topicChip: {
+    height: 40,
+    paddingHorizontal: 16,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#DDE1E5",
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  topicChipSelected: { backgroundColor: "#DCEFED", borderColor: "#0D5F5B" },
+  topicChipText: { fontSize: 15, lineHeight: 20, fontWeight: "600", color: "#252B30" },
+  topicChipTextSelected: { color: "#0D5F5B" },
+
+  signalFooter: { marginTop: "auto", paddingHorizontal: 24, paddingTop: 32, paddingBottom: 24 },
+  signalButton: {
+    height: 56,
+    borderRadius: 12,
+    backgroundColor: "#0D5F5B",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  signalButtonPressed: { backgroundColor: "#094D4A", transform: [{ scale: 0.99 }] },
+  signalButtonText: { fontSize: 17, lineHeight: 22, fontWeight: "600", color: "#FFFFFF" },
   fieldLabel: { fontSize: 12, fontWeight: "700", color: color.light.ink, marginTop: 22, marginBottom: 8 },
   zipInput: { height: 54, borderRadius: radius.button, borderWidth: 1.5, borderColor: color.light.border, backgroundColor: "#fff", paddingHorizontal: 16, fontSize: 20, fontWeight: "600", color: color.light.ink },
   privacyNote: { flexDirection: "row", marginTop: 18 },
