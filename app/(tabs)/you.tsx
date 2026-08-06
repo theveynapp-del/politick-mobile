@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { View, Text, TextInput, Pressable, StyleSheet, Switch, ScrollView } from "react-native";
+import { View, TextInput, Pressable, StyleSheet, Switch, ScrollView } from "react-native";
+import { Text } from "@/components/Text";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Settings, ChevronRight } from "lucide-react-native";

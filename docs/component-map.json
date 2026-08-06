@@ -1,0 +1,45 @@
+{
+  "viewport": {
+    "width": 390,
+    "height": 844,
+    "gutter": 20
+  },
+  "routes": [
+    "/onboarding/welcome",
+    "/onboarding/location",
+    "/onboarding/representatives",
+    "/onboarding/notifications",
+    "/today",
+    "/stories/[slug]",
+    "/stories/[slug]/sources",
+    "/representatives/[id]",
+    "/explore",
+    "/saved",
+    "/profile"
+  ],
+  "components": [
+    "AppHeader",
+    "ProgressDots",
+    "PrimaryButton",
+    "SecondaryButton",
+    "TextLink",
+    "ZipInput",
+    "PrivacyNote",
+    "SegmentedControl",
+    "RepresentativeRow",
+    "NotificationChoiceCard",
+    "DailyProgress",
+    "TopicChip",
+    "StoryCard",
+    "StoryDepthTabs",
+    "StorySection",
+    "SourceRow",
+    "SourceTabs",
+    "RepresentativeHero",
+    "ContactAction",
+    "ProfileTabBar",
+    "SearchField",
+    "SettingsRow",
+    "BottomNav"
+  ]
+}

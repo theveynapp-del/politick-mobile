@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
+import { View, Pressable, ScrollView, StyleSheet } from "react-native";
+import { Text } from "@/components/Text";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ChevronLeft, ExternalLink } from "lucide-react-native";
@@ -96,7 +97,7 @@ const styles = StyleSheet.create({
   appbarTitle: { fontSize: 14, fontWeight: "700", color: color.light.ink },
   segmented: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: color.light.border },
   segmentBtn: { flex: 1, paddingVertical: 12, alignItems: "center", borderBottomWidth: 2, borderBottomColor: "transparent" },
-  segmentBtnActive: { borderBottomColor: color.brand.civicTeal },
+  segmentBtnActive: { borderBottomColor: color.brand.signalGold },
   segmentText: { fontSize: 13.5, fontWeight: "700", color: color.light.muted },
   segmentTextActive: { color: color.brand.deepTeal },
   body: { fontSize: 14.5, lineHeight: 21, color: color.light.ink },

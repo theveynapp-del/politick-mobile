@@ -131,6 +131,8 @@ export const representatives: Representative[] = [
     name: "Sen. R. Talbot",
     jurisdictionConfidence: "High",
     photoUrl: null,
+    phone: null,
+    website: null,
   },
   {
     id: "r2",
@@ -140,6 +142,8 @@ export const representatives: Representative[] = [
     name: "Sen. M. Okafor",
     jurisdictionConfidence: "High",
     photoUrl: null,
+    phone: null,
+    website: null,
   },
   {
     id: "r3",
@@ -149,6 +153,8 @@ export const representatives: Representative[] = [
     name: "Rep. D. Álvarez",
     jurisdictionConfidence: "High",
     photoUrl: null,
+    phone: null,
+    website: null,
   },
   {
     id: "r4",
@@ -158,6 +164,8 @@ export const representatives: Representative[] = [
     name: "Del. J. Farrow",
     jurisdictionConfidence: "High",
     photoUrl: null,
+    phone: null,
+    website: null,
   },
   {
     id: "r5",
@@ -167,5 +175,7 @@ export const representatives: Representative[] = [
     name: "Councilmember P. Reyes",
     jurisdictionConfidence: "Needs review",
     photoUrl: null,
+    phone: null,
+    website: null,
   },
 ];

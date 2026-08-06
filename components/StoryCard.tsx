@@ -1,9 +1,11 @@
-import { View, Text, Pressable, Image, StyleSheet } from "react-native";
+import { View, Pressable, Image, StyleSheet } from "react-native";
+import { Text } from "./Text";
 import { useRouter } from "expo-router";
 import { Bookmark } from "lucide-react-native";
 import { color, radius } from "@/lib/tokens";
 import { Story } from "@/lib/types";
 import { storyImages } from "@/lib/storyImages";
+import { StoryThumbnail } from "./StoryThumbnail";
 
 const categoryColor: Record<Story["scope"], string> = {
   Local: "#795c17",
@@ -54,7 +56,11 @@ export function StoryCard({
             {story.whatHappened}
           </Text>
         </View>
-        {image && <Image source={image} style={styles.thumb} />}
+        {image ? (
+          <Image source={image} style={styles.thumb} />
+        ) : (
+          <StoryThumbnail scope={story.scope} />
+        )}
       </View>
 
       <View style={styles.footerRow}>

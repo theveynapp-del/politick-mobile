@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { View, Text, Pressable, ScrollView, StyleSheet, Image } from "react-native";
+import { View, Pressable, ScrollView, StyleSheet, Image } from "react-native";
+import { Text } from "@/components/Text";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ChevronLeft, Bookmark, Share2 } from "lucide-react-native";
@@ -8,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 import { getTodayStories } from "@/lib/queries";
 import { Story } from "@/lib/types";
 import { storyImages } from "@/lib/storyImages";
+import { StoryThumbnail } from "@/components/StoryThumbnail";
 import { getSavedIds, toggleSavedId } from "@/lib/savedStories";
 
 export default function StoryDetailScreen() {
@@ -55,7 +57,13 @@ export default function StoryDetailScreen() {
             {story.scope.toUpperCase()} · updated {story.updated}
           </Text>
           <Text style={styles.heroTitle}>{story.headline}</Text>
-          {image && <Image source={image} style={styles.heroImage} />}
+          {image ? (
+            <Image source={image} style={styles.heroImage} />
+          ) : (
+            <View style={styles.heroImage}>
+              <StoryThumbnail scope={story.scope} size={100} />
+            </View>
+          )}
           <Text style={styles.byline}>Politick Editorial Desk</Text>
         </View>
 
@@ -72,12 +80,19 @@ export default function StoryDetailScreen() {
             <>
               <Section label="What happened">{story.whatHappened}</Section>
               <Section label="Why it matters">{story.whyItMatters}</Section>
+              <Section label="Who is involved">
+                {`Sponsored by ${story.storyMap.sponsor}. ${story.storyMap.cosponsors}.`}
+              </Section>
+              <Section label="What happens next">{story.storyMap.nextCheckpoint}</Section>
               <View style={styles.relevance}>
                 <Text style={styles.relevanceText}>
                   <Text style={{ fontWeight: "700" }}>Your connection. </Text>
                   {story.zipNote}
                 </Text>
               </View>
+              <Section label="What is uncertain">
+                Not yet assessed — this analysis hasn't been completed for this story yet.
+              </Section>
               <Pressable onPress={() => router.push(`/story/${story.id}/sources`)}>
                 <Text style={styles.sourcesLink}>View sources ({story.sources.length}) →</Text>
               </Pressable>
@@ -124,11 +139,11 @@ const styles = StyleSheet.create({
   hero: { padding: 20, borderBottomWidth: 1, borderBottomColor: color.light.border },
   heroEyebrow: { fontSize: 11, fontWeight: "800", color: color.brand.deepTeal, marginBottom: 8 },
   heroTitle: { fontSize: 24, lineHeight: 30, fontWeight: "800", color: color.light.ink, marginBottom: 12 },
-  heroImage: { width: "100%", height: 160, borderRadius: 14, marginBottom: 12, backgroundColor: color.brand.softTeal },
+  heroImage: { width: "100%", height: 160, borderRadius: 14, marginBottom: 12, backgroundColor: color.brand.softTeal, alignItems: "center", justifyContent: "center", overflow: "hidden" },
   byline: { fontSize: 11, color: color.light.muted },
   segmented: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: color.light.border },
   segmentBtn: { flex: 1, paddingVertical: 12, alignItems: "center", borderBottomWidth: 2, borderBottomColor: "transparent" },
-  segmentBtnActive: { borderBottomColor: color.brand.civicTeal },
+  segmentBtnActive: { borderBottomColor: color.brand.signalGold },
   segmentText: { fontSize: 13.5, fontWeight: "700", color: color.light.muted },
   segmentTextActive: { color: color.brand.deepTeal },
   section: { backgroundColor: color.light.surface, borderWidth: 1, borderColor: color.light.border, borderRadius: radius.card, padding: 16, marginBottom: 12 },

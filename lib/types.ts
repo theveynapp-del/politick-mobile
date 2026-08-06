@@ -44,4 +44,6 @@ export interface Representative {
   name: string;
   jurisdictionConfidence: "High" | "Needs review";
   photoUrl: string | null;
+  phone: string | null;
+  website: string | null;
 }

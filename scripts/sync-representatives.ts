@@ -127,6 +127,8 @@ async function main() {
           .update({
             name: rep.name,
             photo_url: rep.photoURL ?? null,
+            phone: rep.phone ?? null,
+            website: rep.url ?? null,
           })
           .eq("id", repId);
       } else {
@@ -140,6 +142,8 @@ async function main() {
             jurisdiction_confidence: data.lowAccuracy ? "Needs review" : "High",
             photo_url: rep.photoURL ?? null,
             external_id: rep.id,
+            phone: rep.phone ?? null,
+            website: rep.url ?? null,
           })
           .select("id")
           .single();

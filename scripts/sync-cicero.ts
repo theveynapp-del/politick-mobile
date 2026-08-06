@@ -180,7 +180,7 @@ async function main() {
         }
         repId = inserted.id;
         totalInserted++;
-        console.log(`  Inserted: ${name} — ${official.office.title} (${levelFor(districtType)})`);
+        console.log(`  Inserted: ${name} \u2014 ${official.office.title} (${levelFor(districtType)})`);
       }
 
       const { data: existingLink } = await supabase

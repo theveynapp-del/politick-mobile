@@ -1,15 +1,6 @@
 import { useState, useCallback } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  StyleSheet,
-  ScrollView,
-  ActivityIndicator,
-  Switch,
-  Alert,
-} from "react-native";
+import { View, TextInput, Pressable, StyleSheet, ScrollView, ActivityIndicator, Switch, Alert,  } from "react-native";
+import { Text } from "@/components/Text";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { color, radius } from "@/lib/tokens";
@@ -17,6 +8,8 @@ import { supabase } from "@/lib/supabase";
 import { getRepresentativesByZip } from "@/lib/queries";
 import { Representative, RepLevel } from "@/lib/types";
 import { Button } from "@/components/Button";
+import { CivicIllustration } from "@/components/CivicIllustration";
+import { stateForZip } from "@/lib/zipToState";
 import {
   setOnboardingComplete,
   setStoredZip,
@@ -130,38 +123,28 @@ export default function OnboardingScreen() {
       {step === "welcome" && (
         <View style={styles.welcomeWrap}>
           <Text style={styles.onboardingLabel}>Onboarding 1 of {STEP_ORDER.length}</Text>
-          <View style={styles.markBadge}>
-            <Text style={styles.markLetter}>P</Text>
-          </View>
-          <Text style={styles.eyebrow}>WELCOME TO POLITICK</Text>
-          <Text style={styles.h1}>Politics, at the depth you actually need.</Text>
-          <Text style={styles.bodyMuted}>
-            Understand what happened, why it matters to you, and who represents you — without the
-            jargon.
-          </Text>
-          <View style={styles.featureStack}>
-            <FeatureRow n="01" title="Your daily briefing" desc="Five essential stories, explained simply." />
-            <FeatureRow n="02" title="Local by default" desc="Your representatives and issues, based on ZIP code." />
-            <FeatureRow n="03" title="Sources you can inspect" desc="Every important claim links back to evidence." />
+          <Text style={styles.h1}>Welcome to Politick</Text>
+          <Text style={styles.bodyMuted}>Understand what&rsquo;s happening. Know what it means for you.</Text>
+          <View style={styles.illustrationWrap}>
+            <CivicIllustration />
           </View>
           <View style={{ flex: 1 }} />
           <Button variant="Primary" onPress={() => setStep("zip")}>
-            Get started
+            Get Started
           </Button>
           <Pressable onPress={skipOnboarding} style={styles.textBtn}>
-            <Text style={styles.textBtnLabel}>Preview Today</Text>
+            <Text style={styles.textBtnLabel}>I already have an account</Text>
           </Pressable>
         </View>
       )}
 
       {step === "zip" && (
         <View style={styles.page}>
-          <Text style={styles.eyebrow}>MAKE IT LOCAL</Text>
-          <Text style={styles.h1}>What&rsquo;s your ZIP code?</Text>
+          <Text style={styles.h1}>Where do you live?</Text>
           <Text style={styles.bodyMuted}>
-            We use it to identify your city, county, state, and federal representatives.
+            We&rsquo;ll show you the people who represent you and what matters in your area.
           </Text>
-          <Text style={styles.fieldLabel}>ZIP code</Text>
+          <Text style={styles.fieldLabel}>ZIP Code</Text>
           <TextInput
             style={styles.zipInput}
             value={zip}
@@ -171,10 +154,9 @@ export default function OnboardingScreen() {
             placeholder="20814"
             placeholderTextColor={color.light.muted}
           />
-          <View style={styles.privacyCard}>
-            <Text style={styles.privacyTitle}>Your location stays private.</Text>
-            <Text style={styles.privacyBody}>
-              Politick stores your district, not your precise address. You can delete it anytime.
+          <View style={styles.privacyNote}>
+            <Text style={styles.privacyNoteText}>
+              🔒 We only use this to personalize your experience. Your data stays private.
             </Text>
           </View>
           <View style={{ flex: 1 }} />
@@ -182,7 +164,7 @@ export default function OnboardingScreen() {
             <ActivityIndicator color={color.brand.deepTeal} />
           ) : (
             <Button variant="Primary" disabled={zip.length !== 5} onPress={findDistricts}>
-              Find my districts
+              Continue
             </Button>
           )}
         </View>
@@ -190,12 +172,11 @@ export default function OnboardingScreen() {
 
       {step === "confirm" && (
         <View style={styles.page}>
-          <Text style={styles.eyebrow}>CONFIRM YOUR AREA</Text>
-          <Text style={styles.h1}>ZIP {zip}</Text>
+          <Text style={styles.h1}>You&rsquo;re in {stateForZip(zip) ?? "your area"}</Text>
           <Text style={styles.bodyMuted}>
             {lookupFailed
               ? "We don't have representative data for this ZIP yet, but you can still continue — we'll keep looking."
-              : "Here's the government structure Politick will personalize for you."}
+              : "Here are your top officials."}
           </Text>
 
           {!lookupFailed && (
@@ -291,7 +272,7 @@ export default function OnboardingScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.notifTitle}>Breaking Updates</Text>
-                <Text style={styles.notifDesc}>Only for material changes to your saved stories or reps \u2014 never generic "big news" alerts.</Text>
+                <Text style={styles.notifDesc}>Only for material changes to your saved stories or reps — never generic "big news" alerts.</Text>
               </View>
             </Pressable>
           </View>
@@ -312,20 +293,6 @@ export default function OnboardingScreen() {
   );
 }
 
-function FeatureRow({ n, title, desc }: { n: string; title: string; desc: string }) {
-  return (
-    <View style={styles.featureRow}>
-      <View style={styles.featureNum}>
-        <Text style={styles.featureNumText}>{n}</Text>
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.featureTitle}>{title}</Text>
-        <Text style={styles.featureDesc}>{desc}</Text>
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: color.light.canvas },
   appbar: { flexDirection: "row", alignItems: "center", gap: 14, height: 56, paddingHorizontal: 14, borderBottomWidth: 1, borderBottomColor: color.light.border },
@@ -336,30 +303,22 @@ const styles = StyleSheet.create({
 
   onboardingLabel: { fontSize: 11, color: color.light.muted, fontWeight: "600", marginBottom: 12 },
   welcomeWrap: { flex: 1, padding: 20, paddingTop: 24 },
-  markBadge: { width: 60, height: 60, borderRadius: 16, backgroundColor: "#fff", alignItems: "center", justifyContent: "center", marginBottom: 30, shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 8 } },
-  markLetter: { fontSize: 26, fontWeight: "800", color: color.brand.deepTeal },
   eyebrow: { fontSize: 11, fontWeight: "800", letterSpacing: 1.2, color: color.brand.deepTeal },
   h1: { fontSize: 30, fontWeight: "800", color: color.light.ink, marginTop: 8, marginBottom: 10, letterSpacing: -0.5 },
   bodyMuted: { fontSize: 15.5, color: color.light.muted, lineHeight: 22 },
-  featureStack: { marginTop: 22, gap: 14 },
-  featureRow: { flexDirection: "row", gap: 10, alignItems: "flex-start" },
-  featureNum: { width: 28, height: 28, borderRadius: 14, backgroundColor: color.brand.softTeal, alignItems: "center", justifyContent: "center" },
-  featureNumText: { fontSize: 11, fontWeight: "800", color: color.brand.deepTeal },
-  featureTitle: { fontSize: 14, fontWeight: "700", color: color.light.ink },
-  featureDesc: { fontSize: 13, color: color.light.muted, marginTop: 2, lineHeight: 18 },
+  illustrationWrap: { alignItems: "center", marginTop: 32 },
   textBtn: { paddingVertical: 14, alignItems: "center" },
   textBtnLabel: { color: color.brand.deepTeal, fontWeight: "700" },
 
   page: { flex: 1, padding: 20 },
   fieldLabel: { fontSize: 12, fontWeight: "700", color: color.light.ink, marginTop: 22, marginBottom: 8 },
   zipInput: { height: 54, borderRadius: radius.button, borderWidth: 1.5, borderColor: color.light.border, backgroundColor: "#fff", paddingHorizontal: 16, fontSize: 20, fontWeight: "600", color: color.light.ink },
-  privacyCard: { backgroundColor: color.brand.softTeal, borderRadius: 14, padding: 16, marginTop: 18 },
-  privacyTitle: { fontSize: 13.5, fontWeight: "700", color: color.light.ink },
-  privacyBody: { fontSize: 12.5, color: "#385753", marginTop: 4, lineHeight: 17 },
+  privacyNote: { flexDirection: "row", marginTop: 18 },
+  privacyNoteText: { fontSize: 13, color: color.light.muted, lineHeight: 19, flex: 1 },
 
-  tabRow: { flexDirection: "row", backgroundColor: color.light.border, borderRadius: 10, padding: 3, marginTop: 20, marginBottom: 14 },
-  tabBtn: { flex: 1, paddingVertical: 9, alignItems: "center", borderRadius: 8 },
-  tabBtnActive: { backgroundColor: "#fff" },
+  tabRow: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: color.light.border, marginTop: 20, marginBottom: 14 },
+  tabBtn: { flex: 1, paddingVertical: 12, alignItems: "center", borderBottomWidth: 2, borderBottomColor: "transparent" },
+  tabBtnActive: { borderBottomColor: color.brand.signalGold },
   tabBtnText: { fontSize: 12.5, fontWeight: "600", color: color.light.muted },
   tabBtnTextActive: { color: color.brand.deepTeal, fontWeight: "700" },
   noRepsText: { fontSize: 13, color: color.light.muted, textAlign: "center", paddingVertical: 24 },

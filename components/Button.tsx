@@ -1,5 +1,6 @@
-import { Pressable, Text, StyleSheet, ViewStyle, PressableProps } from "react-native";
-import { color, radius, touchTarget } from "@/lib/tokens";
+import { Pressable, StyleSheet, ViewStyle, PressableProps } from "react-native";
+import { Text } from "./Text";
+import { color, radius } from "@/lib/tokens";
 
 type ButtonVariant = "Primary" | "Secondary" | "Tertiary" | "Destructive";
 
@@ -31,9 +32,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: radius.button,
-    paddingVertical: 10,
+    paddingVertical: 14,
     paddingHorizontal: 16,
-    minHeight: touchTarget.min,
+    minHeight: 50,
   },
   label: {
     fontSize: 14,

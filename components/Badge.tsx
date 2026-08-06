@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
+import { Text } from "./Text";
 import { color, radius } from "@/lib/tokens";
 import { SourceType } from "@/lib/types";
 

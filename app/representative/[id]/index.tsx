@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { View, Text, Pressable, Image, ScrollView, StyleSheet } from "react-native";
+import { View, Pressable, Image, ScrollView, StyleSheet, Linking } from "react-native";
+import { Text } from "@/components/Text";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ChevronLeft, MoreHorizontal, Phone, Mail, Globe, Navigation } from "lucide-react-native";
@@ -51,14 +52,14 @@ export default function RepresentativeDetailScreen() {
 
         <View style={styles.contactGrid}>
           {[
-            { icon: Phone, label: "Call" },
-            { icon: Mail, label: "Email" },
-            { icon: Globe, label: "Website" },
-            { icon: Navigation, label: "Directions" },
-          ].map(({ icon: Icon, label }) => (
-            <Pressable key={label} style={styles.contactAction}>
-              <Icon size={16} color={color.light.ink} />
-              <Text style={styles.contactActionText}>{label}</Text>
+            { icon: Phone, label: "Call", action: () => rep.phone && Linking.openURL(`tel:${rep.phone}`), disabled: !rep.phone },
+            { icon: Mail, label: "Email", action: undefined, disabled: true },
+            { icon: Globe, label: "Website", action: () => rep.website && Linking.openURL(rep.website), disabled: !rep.website },
+            { icon: Navigation, label: "Directions", action: undefined, disabled: true },
+          ].map(({ icon: Icon, label, action, disabled }) => (
+            <Pressable key={label} style={[styles.contactAction, disabled && styles.contactActionDisabled]} onPress={action} disabled={disabled}>
+              <Icon size={16} color={disabled ? color.light.muted : color.light.ink} />
+              <Text style={[styles.contactActionText, disabled && { color: color.light.muted }]}>{label}</Text>
             </Pressable>
           ))}
         </View>
@@ -81,7 +82,7 @@ export default function RepresentativeDetailScreen() {
           {tab === "activity" && (
             <View style={styles.activityRow}>
               <Text style={styles.activityTitle}>No recorded action found</Text>
-              <Text style={styles.activityDesc}>Checked today \u2014 nothing tracked yet for this representative on current bills.</Text>
+              <Text style={styles.activityDesc}>Checked today — nothing tracked yet for this representative on current bills.</Text>
             </View>
           )}
           {tab === "votes" && (
@@ -110,10 +111,11 @@ const styles = StyleSheet.create({
   contactBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
   contactGrid: { flexDirection: "row", paddingHorizontal: 20, paddingVertical: 14, gap: 8 },
   contactAction: { flex: 1, borderWidth: 1, borderColor: color.light.border, borderRadius: 12, paddingVertical: 12, alignItems: "center", gap: 4 },
+  contactActionDisabled: { opacity: 0.4 },
   contactActionText: { fontSize: 10.5, fontWeight: "700", color: color.light.ink },
   segmented: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: color.light.border },
   segmentBtn: { flex: 1, paddingVertical: 12, alignItems: "center", borderBottomWidth: 2, borderBottomColor: "transparent" },
-  segmentBtnActive: { borderBottomColor: color.brand.civicTeal },
+  segmentBtnActive: { borderBottomColor: color.brand.signalGold },
   segmentText: { fontSize: 12.5, fontWeight: "700", color: color.light.muted },
   segmentTextActive: { color: color.brand.deepTeal },
   officeCard: { backgroundColor: color.light.surface, borderWidth: 1, borderColor: color.light.border, borderRadius: radius.card, padding: 16 },

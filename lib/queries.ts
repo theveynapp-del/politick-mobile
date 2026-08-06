@@ -87,6 +87,8 @@ interface RepRow {
   name: string;
   jurisdiction_confidence: Representative["jurisdictionConfidence"];
   photo_url: string | null;
+  phone: string | null;
+  website: string | null;
 }
 
 export async function getRepresentativesByZip(
@@ -95,7 +97,7 @@ export async function getRepresentativesByZip(
 ): Promise<Representative[]> {
   const { data, error } = await supabase
     .from("rep_zip_coverage")
-    .select("representatives ( id, level, role, controls, name, jurisdiction_confidence, photo_url )")
+    .select("representatives ( id, level, role, controls, name, jurisdiction_confidence, photo_url, phone, website )")
     .eq("zip", zip);
 
   if (error) {
@@ -111,5 +113,7 @@ export async function getRepresentativesByZip(
     name: row.representatives.name,
     jurisdictionConfidence: row.representatives.jurisdiction_confidence,
     photoUrl: row.representatives.photo_url,
+    phone: row.representatives.phone,
+    website: row.representatives.website,
   }));
 }
