@@ -49,7 +49,6 @@ export default function OnboardingScreen() {
 
   const stepIndex = STEP_ORDER.indexOf(step);
   const stepNumber = stepIndex + 1;
-  const stepProgressPct = (stepNumber / STEP_ORDER.length) * 100;
 
   const findDistricts = useCallback(async () => {
     if (zip.length !== 5) return;
@@ -108,14 +107,13 @@ export default function OnboardingScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       {step !== "welcome" && (
-        <View style={styles.appbar}>
+        <View style={styles.stepHeader}>
           <Pressable onPress={goBack} hitSlop={8}>
             <Text style={styles.backArrow}>{"\u2190"}</Text>
           </Pressable>
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${stepProgressPct}%` }]} />
-          </View>
-          <Text style={styles.stepMicro}>{stepNumber} of {STEP_ORDER.length}</Text>
+          <Text style={styles.stepHeaderLabel}>
+            Onboarding {stepNumber} of {STEP_ORDER.length}
+          </Text>
         </View>
       )}
 
@@ -307,11 +305,12 @@ export default function OnboardingScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: color.light.canvas },
-  appbar: { flexDirection: "row", alignItems: "center", gap: 14, height: 56, paddingHorizontal: 14, borderBottomWidth: 1, borderBottomColor: color.light.border },
-  backArrow: { fontSize: 20, width: 28 },
-  progressTrack: { flex: 1, height: 4, backgroundColor: color.light.border, borderRadius: 99, overflow: "hidden" },
-  progressFill: { height: "100%", backgroundColor: color.brand.civicTeal },
-  stepMicro: { fontSize: 11, color: color.light.muted },
+  // Screens 2–5 reuse screen 1's plain "Onboarding X of 5" label (no progress
+  // bar) so the step indicator reads identically across the whole flow. The
+  // back arrow stays for navigation, inline so vertical rhythm still matches.
+  stepHeader: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 20, paddingTop: 24 },
+  stepHeaderLabel: { fontSize: 11, color: color.light.muted, fontWeight: "600" },
+  backArrow: { fontSize: 20, width: 22, color: color.light.ink },
 
   onboardingLabel: { fontSize: 11, color: color.light.muted, fontWeight: "600", marginBottom: 12 },
   welcomeWrap: { flex: 1, padding: 20, paddingTop: 24 },
