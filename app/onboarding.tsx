@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { View, TextInput, Pressable, StyleSheet, ScrollView, ActivityIndicator, Switch, Alert,  } from "react-native";
+import { View, TextInput, Pressable, StyleSheet, ScrollView, ActivityIndicator, Switch, Alert, Image } from "react-native";
 import { Text } from "@/components/Text";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -8,7 +8,6 @@ import { supabase } from "@/lib/supabase";
 import { getRepresentativesByZip } from "@/lib/queries";
 import { Representative, RepLevel } from "@/lib/types";
 import { Button } from "@/components/Button";
-import { CivicIllustration } from "@/components/CivicIllustration";
 import { stateForZip } from "@/lib/zipToState";
 import {
   setOnboardingComplete,
@@ -123,10 +122,23 @@ export default function OnboardingScreen() {
       {step === "welcome" && (
         <View style={styles.welcomeWrap}>
           <Text style={styles.onboardingLabel}>Onboarding 1 of {STEP_ORDER.length}</Text>
-          <Text style={styles.h1}>Welcome to Politick</Text>
-          <Text style={styles.bodyMuted}>Understand what&rsquo;s happening. Know what it means for you.</Text>
+          <Text style={styles.h1}>Welcome to</Text>
+          {/* Approved horizontal logo lockup, used as a single image asset so
+              emblem geometry, gold dots, and wordmark typography stay locked. */}
+          <Image
+            source={require("@/assets/politick-logo-lockup.png")}
+            style={styles.welcomeLogo}
+            resizeMode="contain"
+            accessibilityLabel="Politick"
+          />
+          <Text style={styles.bodyMuted}>{"Understand what’s happening.\nKnow what it means for you."}</Text>
           <View style={styles.illustrationWrap}>
-            <CivicIllustration />
+            <Image
+              source={require("@/assets/onboarding-welcome.jpg")}
+              style={styles.welcomeIllustration}
+              resizeMode="cover"
+              accessibilityLabel="People walking on a civic plaza in front of a capitol building"
+            />
           </View>
           <View style={{ flex: 1 }} />
           <Button variant="Primary" onPress={() => setStep("zip")}>
@@ -303,10 +315,18 @@ const styles = StyleSheet.create({
 
   onboardingLabel: { fontSize: 11, color: color.light.muted, fontWeight: "600", marginBottom: 12 },
   welcomeWrap: { flex: 1, padding: 20, paddingTop: 24 },
+  // 228 x 66 preserves the asset's exact 1000:287 aspect ratio, within the
+  // spec's 220–235px lockup width.
+  welcomeLogo: { width: 228, height: 66, marginTop: 2, marginBottom: 14 },
   eyebrow: { fontSize: 11, fontWeight: "800", letterSpacing: 1.2, color: color.brand.deepTeal },
   h1: { fontSize: 30, fontWeight: "800", color: color.light.ink, marginTop: 8, marginBottom: 10, letterSpacing: -0.5 },
   bodyMuted: { fontSize: 15.5, color: color.light.muted, lineHeight: 22 },
-  illustrationWrap: { alignItems: "center", marginTop: 32 },
+  // Full-bleed within the page's 20px padding. The 4:3 ratio lives on the
+  // wrapper (not the Image) — RN Web ignores aspectRatio on Image and falls
+  // back to the asset's intrinsic 900px height, which letterboxes the art
+  // and pushes the CTAs off-screen.
+  illustrationWrap: { marginTop: 28, marginHorizontal: -20, aspectRatio: 4 / 3 },
+  welcomeIllustration: { width: "100%", height: "100%" },
   textBtn: { paddingVertical: 14, alignItems: "center" },
   textBtnLabel: { color: color.brand.deepTeal, fontWeight: "700" },
 
