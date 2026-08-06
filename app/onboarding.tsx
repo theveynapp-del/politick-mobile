@@ -96,8 +96,10 @@ export default function OnboardingScreen() {
   const router = useRouter();
   const [step, setStep] = useState<Step>("welcome");
   const [confirmTab, setConfirmTab] = useState<RepLevel>("Federal");
-  // Spec calls for 90210 as the location screen's default value.
-  const [zip, setZip] = useState("90210");
+  // No default. The reference mockup shows 90210 filled in, but prefilling a
+  // real ZIP means anyone who taps Continue without editing gets Beverly
+  // Hills officials presented as their own.
+  const [zip, setZip] = useState("");
   const [zipError, setZipError] = useState(false);
   const [reps, setReps] = useState<Representative[]>([]);
   const [loadingReps, setLoadingReps] = useState(false);
