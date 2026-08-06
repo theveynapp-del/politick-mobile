@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { View, TextInput, Pressable, StyleSheet, ScrollView, ActivityIndicator, Switch, Alert, Image, Keyboard, useWindowDimensions } from "react-native";
-import { Navigation, Lock, ArrowLeft, ChevronRight } from "lucide-react-native";
+import { Navigation, Lock, ArrowLeft, ChevronRight, Bell, Smartphone } from "lucide-react-native";
 import { Text } from "@/components/Text";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -139,6 +139,8 @@ export default function OnboardingScreen() {
   const compact = windowHeight <= 820;
   // Spec: at 375px wide, drop the signal screen's gutter from 24px to 20px.
   const narrow = windowWidth <= 375;
+  // Notifications screen tightens below 380px (28px gutter -> 22px).
+  const tight = windowWidth <= 380;
 
   // The wrapping SafeAreaView already applies the device inset. This tops it
   // up to the spec's `max(20px, env(safe-area-inset-*))` floor, which matters
@@ -176,11 +178,13 @@ export default function OnboardingScreen() {
     setTopics((prev) => (prev.includes(topic) ? prev.filter((t) => t !== topic) : [...prev, topic]));
   };
 
-  const finish = async () => {
+  // "Set this later" skips the notification step rather than silently
+  // recording a preference the user never actually made.
+  const finish = async ({ saveNotificationChoice = true } = {}) => {
     setFinishing(true);
     await setStoredZip(zip);
     await setStoredTopics(topics);
-    await setNotificationsEnabled(notifChoice === "daily");
+    if (saveNotificationChoice) await setNotificationsEnabled(notifChoice === "daily");
     await setOnboardingComplete(true);
     router.replace("/(tabs)");
   };
@@ -219,19 +223,9 @@ export default function OnboardingScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-      {/* The location and representatives screens render their own header
-          inside their content column (28px gutter) to keep it aligned with
-          their copy, so they opt out of the shared one. */}
-      {step !== "welcome" && step !== "zip" && step !== "confirm" && step !== "interests" && (
-        <View style={styles.stepHeader}>
-          <Pressable onPress={goBack} hitSlop={8}>
-            <Text style={styles.backArrow}>{"\u2190"}</Text>
-          </Pressable>
-          <Text style={styles.stepHeaderLabel}>
-            Onboarding {stepNumber} of {STEP_ORDER.length}
-          </Text>
-        </View>
-      )}
+      {/* No shared header: each step renders its own inside its content
+          column, since the specs give them different gutters and label
+          colours. Rendering one here as well double-printed the label. */}
 
       {step === "welcome" && (
         <View style={styles.welcomeWrap}>
@@ -542,46 +536,100 @@ export default function OnboardingScreen() {
       )}
 
       {step === "notifications" && (
-        <View style={styles.page}>
-          <Text style={styles.eyebrow}>STAY IN THE KNOW</Text>
-          <Text style={styles.h1}>Get your daily briefing and breaking updates.</Text>
-          <View style={{ gap: 10, marginTop: 22 }}>
-            <Pressable
-              onPress={() => setNotifChoice("daily")}
-              style={[styles.notifCard, notifChoice === "daily" && styles.notifCardActive]}
+        <View style={[styles.notifScreen, { paddingTop: topFloor }]}>
+          <View style={[styles.notifContent, tight && styles.notifContentTight]}>
+            {/* Spec for this screen says no back button, but the standing
+                instruction is a back arrow on every step except the first. */}
+            <View style={styles.notifTopRow}>
+              <Pressable
+                onPress={goBack}
+                hitSlop={12}
+                accessibilityRole="button"
+                accessibilityLabel="Back"
+                style={styles.signalBackBtn}
+              >
+                <ArrowLeft size={22} color="#101418" strokeWidth={1.8} />
+              </Pressable>
+              <Text style={styles.notifProgress}>
+                Onboarding {stepNumber} of {STEP_ORDER.length}
+              </Text>
+            </View>
+
+            <Text style={styles.notifHeadline}>Stay in the know</Text>
+            <Text style={styles.notifDescription}>
+              {"Get your daily briefing and\nbreaking updates."}
+            </Text>
+
+            <View
+              style={styles.notifOptions}
+              accessibilityRole="radiogroup"
+              accessibilityLabel="Notification preferences"
             >
-              <View style={[styles.radioOuter, notifChoice === "daily" && styles.radioOuterActive]}>
-                {notifChoice === "daily" && <View style={styles.radioInner} />}
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.notifTitle}>Daily Briefing</Text>
-                <Text style={styles.notifDesc}>A 5-minute summary every morning.</Text>
-              </View>
-            </Pressable>
+              {([
+                {
+                  key: "daily" as const,
+                  Icon: Bell,
+                  title: "Daily Briefing",
+                  desc: "A 5-minute summary\nevery morning.",
+                },
+                {
+                  key: "breaking" as const,
+                  Icon: Smartphone,
+                  title: "Breaking Updates",
+                  desc: "Important alerts\nthroughout the day.",
+                },
+              ]).map(({ key, Icon, title, desc }) => {
+                const selected = notifChoice === key;
+                return (
+                  <Pressable
+                    key={key}
+                    onPress={() => setNotifChoice(key)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: selected }}
+                    accessibilityLabel={`${title}. ${desc.replace(/\n/g, " ")}`}
+                    style={[styles.notifCard, tight && styles.notifCardTight]}
+                  >
+                    <View style={styles.notifIconCol}>
+                      <Icon size={23} color="#101418" strokeWidth={1.8} />
+                    </View>
+
+                    <View style={styles.notifTextBlock}>
+                      <Text style={styles.notifCardTitle}>{title}</Text>
+                      <Text style={styles.notifCardDesc}>{desc}</Text>
+                    </View>
+
+                    {/* Selection is shown by the filled inner dot as well as
+                        colour, so it doesn't rely on colour alone. */}
+                    <View style={[styles.radioRing, selected && styles.radioRingSelected]}>
+                      {selected && <View style={styles.radioDot} />}
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          <View style={[styles.notifFooter, tight && styles.notifContentTight]}>
+            {finishing ? (
+              <ActivityIndicator color={color.brand.deepTeal} style={{ height: 58 }} />
+            ) : (
+              <Pressable
+                style={({ pressed }) => [styles.notifButton, pressed && styles.notifButtonPressed]}
+                accessibilityRole="button"
+                onPress={() => finish()}
+              >
+                <Text style={styles.notifButtonText}>Let&rsquo;s Go</Text>
+              </Pressable>
+            )}
+
             <Pressable
-              onPress={() => setNotifChoice("breaking")}
-              style={[styles.notifCard, notifChoice === "breaking" && styles.notifCardActive]}
+              style={styles.notifSecondary}
+              accessibilityRole="button"
+              onPress={() => finish({ saveNotificationChoice: false })}
             >
-              <View style={[styles.radioOuter, notifChoice === "breaking" && styles.radioOuterActive]}>
-                {notifChoice === "breaking" && <View style={styles.radioInner} />}
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.notifTitle}>Breaking Updates</Text>
-                <Text style={styles.notifDesc}>Only for material changes to your saved stories or reps — never generic "big news" alerts.</Text>
-              </View>
+              <Text style={styles.notifSecondaryText}>Set this later</Text>
             </Pressable>
           </View>
-          <View style={{ flex: 1 }} />
-          {finishing ? (
-            <ActivityIndicator color={color.brand.deepTeal} />
-          ) : (
-            <Button variant="Primary" onPress={finish}>
-              Let&rsquo;s Go
-            </Button>
-          )}
-          <Pressable onPress={finish} style={styles.textBtn}>
-            <Text style={styles.textBtnLabel}>Set this later</Text>
-          </Pressable>
         </View>
       )}
     </SafeAreaView>
@@ -593,9 +641,6 @@ const styles = StyleSheet.create({
   // Screens 2–5 reuse screen 1's plain "Onboarding X of 5" label (no progress
   // bar) so the step indicator reads identically across the whole flow. The
   // back arrow stays for navigation, inline so vertical rhythm still matches.
-  stepHeader: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 20, paddingTop: 24 },
-  stepHeaderLabel: { fontSize: 11, color: color.light.muted, fontWeight: "600" },
-  backArrow: { fontSize: 20, width: 22, color: color.light.ink },
 
   onboardingLabel: { fontSize: 11, color: color.light.muted, fontWeight: "600", marginBottom: 12 },
   welcomeWrap: { flex: 1, padding: 20, paddingTop: 24 },
@@ -820,6 +865,70 @@ const styles = StyleSheet.create({
   },
   signalButtonPressed: { backgroundColor: "#094D4A", transform: [{ scale: 0.99 }] },
   signalButtonText: { fontSize: 17, lineHeight: 22, fontWeight: "600", color: "#FFFFFF" },
+
+  /* ---------- Onboarding 5: notifications (scoped to this screen) ---------- */
+  notifScreen: { flex: 1, backgroundColor: color.light.canvas },
+  notifContent: { paddingHorizontal: 28 },
+  notifContentTight: { paddingHorizontal: 22 },
+
+  notifTopRow: { marginTop: 34, flexDirection: "row", alignItems: "center", gap: 10 },
+  notifProgress: { fontSize: 14, lineHeight: 20, fontWeight: "600", color: "#5D6670", letterSpacing: -0.1 },
+
+  notifHeadline: { marginTop: 36, fontSize: 32, lineHeight: 38, fontWeight: "700", letterSpacing: -0.6, color: "#101418" },
+  notifDescription: { marginTop: 18, fontSize: 18, lineHeight: 28, fontWeight: "400", color: "#252B30" },
+
+  notifOptions: { marginTop: 36, gap: 18 },
+  notifCard: {
+    minHeight: 122,
+    padding: 18,
+    flexDirection: "row",
+    alignItems: "center",
+    columnGap: 16,
+    borderWidth: 1.5,
+    borderColor: "#D8D2C7",
+    borderRadius: 16,
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#101418",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 2,
+    elevation: 0,
+  },
+  notifCardTight: { minHeight: 118, columnGap: 14 },
+  notifIconCol: { width: 28, alignItems: "flex-start" },
+  notifTextBlock: { flex: 1, minWidth: 0, alignItems: "flex-start" },
+  notifCardTitle: { fontSize: 18, lineHeight: 24, fontWeight: "700", color: "#101418" },
+  notifCardDesc: { marginTop: 6, fontSize: 16, lineHeight: 24, fontWeight: "400", color: "#252B30" },
+
+  radioRing: {
+    width: 24,
+    height: 24,
+    borderRadius: 999,
+    borderWidth: 2,
+    borderColor: "#B9B2A7",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  radioRingSelected: { borderColor: "#E56A3A" },
+  radioDot: { width: 12, height: 12, borderRadius: 999, backgroundColor: "#E56A3A" },
+
+  notifFooter: { marginTop: "auto", paddingHorizontal: 28, paddingBottom: 20 },
+  notifButton: {
+    height: 58,
+    borderRadius: 12,
+    backgroundColor: "#0D5F5B",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#101418",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 7,
+    elevation: 2,
+  },
+  notifButtonPressed: { backgroundColor: "#094D4A", transform: [{ scale: 0.99 }] },
+  notifButtonText: { fontSize: 17, lineHeight: 22, fontWeight: "600", color: "#FFFFFF" },
+  notifSecondary: { minHeight: 44, marginTop: 18, alignItems: "center", justifyContent: "center" },
+  notifSecondaryText: { fontSize: 15, lineHeight: 20, fontWeight: "500", color: "#101418" },
   fieldLabel: { fontSize: 12, fontWeight: "700", color: color.light.ink, marginTop: 22, marginBottom: 8 },
   zipInput: { height: 54, borderRadius: radius.button, borderWidth: 1.5, borderColor: color.light.border, backgroundColor: "#fff", paddingHorizontal: 16, fontSize: 20, fontWeight: "600", color: color.light.ink },
   privacyNote: { flexDirection: "row", marginTop: 18 },
@@ -845,11 +954,4 @@ const styles = StyleSheet.create({
   chipText: { fontSize: 13, color: color.light.ink },
   chipTextSelected: { color: color.brand.deepTeal, fontWeight: "700" },
 
-  notifCard: { flexDirection: "row", alignItems: "flex-start", gap: 12, backgroundColor: "#fff", borderWidth: 1.5, borderColor: color.light.border, borderRadius: 14, padding: 16 },
-  notifCardActive: { borderColor: color.brand.civicTeal },
-  radioOuter: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: color.light.border, alignItems: "center", justifyContent: "center", marginTop: 1 },
-  radioOuterActive: { borderColor: color.brand.civicTeal },
-  radioInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: color.brand.civicTeal },
-  notifTitle: { fontSize: 14, fontWeight: "700", color: color.light.ink, marginBottom: 3 },
-  notifDesc: { fontSize: 12.5, color: color.light.muted, lineHeight: 17 },
 });
