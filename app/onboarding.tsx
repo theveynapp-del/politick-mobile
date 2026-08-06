@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { View, TextInput, Pressable, StyleSheet, ScrollView, ActivityIndicator, Switch, Alert, Image, Keyboard, useWindowDimensions } from "react-native";
-import { Navigation, Lock } from "lucide-react-native";
+import { Navigation, Lock, ArrowLeft, ChevronRight } from "lucide-react-native";
 import { Text } from "@/components/Text";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -34,7 +34,63 @@ const TOPIC_OPTIONS = [
   "Elections",
 ];
 
-const CONFIRM_TABS: RepLevel[] = ["Federal", "State", "Local"];
+const CONFIRM_TABS: RepLevel[] = ["Local", "State", "Federal"];
+
+/**
+ * Back arrow + progress label, inline so it costs no vertical space. Shown on
+ * every onboarding screen except the first, which has nothing to go back to.
+ */
+function StepHeaderRow({
+  stepNumber,
+  compact,
+  onBack,
+}: {
+  stepNumber: number;
+  compact: boolean;
+  onBack: () => void;
+}) {
+  return (
+    <View style={[styles.stepRow, compact && styles.stepRowCompact]}>
+      <Pressable
+        onPress={onBack}
+        hitSlop={12}
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
+        style={styles.stepBackBtn}
+      >
+        <ArrowLeft size={22} color="#101418" strokeWidth={2} />
+      </Pressable>
+      <Text style={styles.progressLabel}>
+        Onboarding {stepNumber} of {STEP_ORDER.length}
+      </Text>
+    </View>
+  );
+}
+
+/**
+ * The reference mockup lists a fixed trio of officials, but this app resolves
+ * real representatives per ZIP. These map the real `role`/`level` we store
+ * onto the reference's two-line role/office treatment, without inventing
+ * detail we don't hold — notably district numbers, which aren't stored.
+ */
+function roleLineFor(rep: Representative): string {
+  if (/senator/i.test(rep.role)) return "Senator";
+  if (/representative|delegate|assembly/i.test(rep.role)) return "Representative";
+  return rep.role;
+}
+
+function officeLineFor(rep: Representative, stateName: string | null): string {
+  if (rep.level === "Federal") {
+    return /senator/i.test(rep.role) ? "U.S. Senate" : "U.S. House";
+  }
+  if (rep.level === "State") {
+    return stateName ? `${stateName} Legislature` : "State legislature";
+  }
+  // Local roles (Supervisor, Councilmember, Mayor…) already carry the office
+  // name in `role`, so repeating it here would just duplicate the line. We
+  // don't store the county/city, so stay general rather than invent one.
+  return "Local government";
+}
 
 export default function OnboardingScreen() {
   const router = useRouter();
@@ -133,12 +189,14 @@ export default function OnboardingScreen() {
     reps: reps.filter((r) => r.level === level || (level === "Local" && r.level === "County")),
   }));
 
+  const visibleReps = confirmGroups.find((g) => g.level === confirmTab)?.reps ?? [];
+
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-      {/* The location screen renders its own progress label inside its
-          content column (28px gutter, no back button) per its spec, so it
-          opts out of the shared step header. */}
-      {step !== "welcome" && step !== "zip" && (
+      {/* The location and representatives screens render their own header
+          inside their content column (28px gutter) to keep it aligned with
+          their copy, so they opt out of the shared one. */}
+      {step !== "welcome" && step !== "zip" && step !== "confirm" && (
         <View style={styles.stepHeader}>
           <Pressable onPress={goBack} hitSlop={8}>
             <Text style={styles.backArrow}>{"\u2190"}</Text>
@@ -187,9 +245,7 @@ export default function OnboardingScreen() {
         // focused at all. Dismissal is handled on the 5th digit instead.
         <View style={[styles.locationScreen, { paddingTop: topFloor }]}>
           <View style={styles.locationContent}>
-            <Text style={[styles.progressLabel, compact && styles.progressLabelCompact]}>
-              Onboarding {stepNumber} of {STEP_ORDER.length}
-            </Text>
+            <StepHeaderRow stepNumber={stepNumber} compact={compact} onBack={goBack} />
 
             <Text style={[styles.locationHeadline, compact && styles.locationHeadlineCompact]}>
               Where do you live?
@@ -295,50 +351,98 @@ export default function OnboardingScreen() {
       )}
 
       {step === "confirm" && (
-        <View style={styles.page}>
-          <Text style={styles.h1}>You&rsquo;re in {stateForZip(zip) ?? "your area"}</Text>
-          <Text style={styles.bodyMuted}>
-            {lookupFailed
-              ? "We don't have representative data for this ZIP yet, but you can still continue — we'll keep looking."
-              : "Here are your top officials."}
-          </Text>
+        <View style={[styles.repsScreen, { paddingTop: topFloor }]}>
+          <View style={styles.repsContent}>
+            <StepHeaderRow stepNumber={stepNumber} compact={compact} onBack={goBack} />
 
-          {!lookupFailed && (
-            <>
-              <View style={styles.tabRow}>
-                {CONFIRM_TABS.map((t) => (
-                  <Pressable key={t} onPress={() => setConfirmTab(t)} style={[styles.tabBtn, confirmTab === t && styles.tabBtnActive]}>
-                    <Text style={[styles.tabBtnText, confirmTab === t && styles.tabBtnTextActive]}>{t}</Text>
+            <Text style={[styles.repsHeadline, compact && styles.repsHeadlineCompact]}>
+              You&rsquo;re in {stateForZip(zip) ?? "your area"}
+            </Text>
+
+            <Text style={styles.repsDescription}>
+              {lookupFailed
+                ? "We don’t have representative data for this ZIP yet."
+                : "Here are your top officials."}
+            </Text>
+
+            <View
+              style={[styles.officeTabs, compact && styles.officeTabsCompact]}
+              accessibilityRole="tablist"
+            >
+              {CONFIRM_TABS.map((t) => {
+                const active = confirmTab === t;
+                return (
+                  <Pressable
+                    key={t}
+                    onPress={() => setConfirmTab(t)}
+                    style={styles.officeTab}
+                    accessibilityRole="tab"
+                    accessibilityState={{ selected: active }}
+                  >
+                    <Text style={[styles.officeTabText, active && styles.officeTabTextActive]}>{t}</Text>
+                    {active && <View style={styles.officeTabUnderline} />}
                   </Pressable>
-                ))}
-              </View>
+                );
+              })}
+            </View>
 
-              <ScrollView style={{ marginBottom: 8 }}>
-                {(confirmGroups.find((g) => g.level === confirmTab)?.reps ?? []).length === 0 ? (
-                  <Text style={styles.noRepsText}>No {confirmTab.toLowerCase()} representatives found for this ZIP yet.</Text>
-                ) : (
-                  confirmGroups
-                    .find((g) => g.level === confirmTab)!
-                    .reps.map((rep) => (
-                      <View key={rep.id} style={styles.districtRow}>
-                        <View style={{ flex: 1 }}>
-                          <Text style={styles.districtName}>{rep.name}</Text>
-                          <Text style={styles.districtSmall}>{rep.role}</Text>
-                        </View>
+            <View style={styles.repGroup}>
+              {visibleReps.length === 0 ? (
+                <View style={styles.repEmptyRow}>
+                  <Text style={styles.repEmptyText}>
+                    No {confirmTab.toLowerCase()} officials found for this ZIP yet.
+                  </Text>
+                </View>
+              ) : (
+                visibleReps.map((rep, i) => (
+                  <View key={rep.id} style={[styles.repRow, compact && styles.repRowCompact]}>
+                    {i > 0 && <View style={styles.repDivider} />}
+                    {rep.photoUrl ? (
+                      <Image
+                        source={{ uri: rep.photoUrl }}
+                        style={styles.repAvatar}
+                        accessibilityLabel={`Portrait of ${rep.name}`}
+                      />
+                    ) : (
+                      <View style={[styles.repAvatar, styles.repAvatarFallback]}>
+                        <Text style={styles.repAvatarInitials}>
+                          {rep.name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
+                        </Text>
                       </View>
-                    ))
-                )}
-              </ScrollView>
-            </>
-          )}
+                    )}
 
-          <View style={{ flex: 1 }} />
-          <Pressable onPress={() => setStep("zip")} style={styles.secondaryLikeBtn}>
-            <Text style={styles.secondaryLikeBtnText}>This looks wrong</Text>
-          </Pressable>
-          <Button variant="Primary" onPress={() => setStep("interests")}>
-            Looks right
-          </Button>
+                    <View style={styles.repTextBlock}>
+                      <Text style={styles.repRole}>{roleLineFor(rep)}</Text>
+                      <Text style={styles.repName} numberOfLines={2}>
+                        {rep.name}
+                      </Text>
+                      <Text style={styles.repOffice}>{officeLineFor(rep, stateForZip(zip))}</Text>
+                    </View>
+
+                    <ChevronRight size={21} color="#5D6670" strokeWidth={1.8} />
+                  </View>
+                ))
+              )}
+            </View>
+          </View>
+
+          <View style={styles.repsFooter}>
+            <Pressable
+              style={({ pressed }) => [styles.primaryButton, pressed && styles.primaryButtonPressed]}
+              accessibilityRole="button"
+              onPress={() => setStep("interests")}
+            >
+              <Text style={styles.primaryButtonText}>Looks Right</Text>
+            </Pressable>
+
+            <Pressable
+              style={styles.secondaryAction}
+              accessibilityRole="button"
+              onPress={() => setStep("zip")}
+            >
+              <Text style={styles.secondaryActionText}>Edit ZIP Code</Text>
+            </Pressable>
+          </View>
         </View>
       )}
 
@@ -449,8 +553,12 @@ const styles = StyleSheet.create({
   locationScreen: { flex: 1, backgroundColor: color.light.canvas },
   locationContent: { paddingHorizontal: 28 },
 
-  progressLabel: { marginTop: 30, fontSize: 14, lineHeight: 20, fontWeight: "600", color: "#41484F", letterSpacing: -0.1 },
-  progressLabelCompact: { marginTop: 22 },
+  // Back arrow sits inline with the progress label so it costs no vertical
+  // space and the spec's rhythm below it is preserved.
+  stepRow: { marginTop: 30, flexDirection: "row", alignItems: "center", gap: 10 },
+  stepRowCompact: { marginTop: 22 },
+  stepBackBtn: { width: 22, height: 22, alignItems: "center", justifyContent: "center" },
+  progressLabel: { fontSize: 14, lineHeight: 20, fontWeight: "600", color: "#41484F", letterSpacing: -0.1 },
 
   locationHeadline: { marginTop: 36, fontSize: 30, lineHeight: 36, fontWeight: "700", color: "#101418", letterSpacing: -0.55 },
   locationHeadlineCompact: { marginTop: 30 },
@@ -512,6 +620,88 @@ const styles = StyleSheet.create({
   continueButtonDisabled: { backgroundColor: "#A9B5B4", shadowOpacity: 0, elevation: 0 },
   continueButtonText: { fontSize: 17, lineHeight: 22, fontWeight: "600", color: "#FFFFFF" },
   continueButtonTextDisabled: { color: "rgba(255,255,255,0.85)" },
+
+  /* ---------- Onboarding 3: representatives (scoped to this screen) ---------- */
+  repsScreen: { flex: 1, backgroundColor: color.light.canvas },
+  repsContent: { paddingHorizontal: 28 },
+
+  repsHeadline: { marginTop: 38, fontSize: 30, lineHeight: 36, fontWeight: "700", color: "#101418", letterSpacing: -0.55 },
+  repsHeadlineCompact: { marginTop: 30 },
+  repsDescription: { marginTop: 18, fontSize: 17, lineHeight: 24, fontWeight: "400", color: "#5D6670" },
+
+  officeTabs: {
+    marginTop: 30,
+    height: 54,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E3E0D8",
+  },
+  officeTabsCompact: { marginTop: 24 },
+  officeTab: { flex: 1, height: 54, alignItems: "center", justifyContent: "center" },
+  officeTabText: { fontSize: 16, lineHeight: 22, fontWeight: "600", color: "#252B30" },
+  officeTabTextActive: { color: "#101418" },
+  officeTabUnderline: {
+    position: "absolute",
+    bottom: -1,
+    height: 3,
+    left: "18%",
+    right: "18%",
+    borderRadius: 999,
+    backgroundColor: "#B84E3C",
+  },
+
+  repGroup: {
+    marginTop: 16,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#DDE1E5",
+    borderRadius: 16,
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#101418",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 1,
+  },
+  repRow: {
+    position: "relative",
+    minHeight: 100,
+    paddingHorizontal: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  repRowCompact: { minHeight: 94 },
+  // Starts after the avatar so it never crosses the photo.
+  repDivider: { position: "absolute", top: 0, left: 90, right: 0, height: 1, backgroundColor: "#DDE1E5" },
+  repAvatar: { width: 64, height: 64, borderRadius: 999, backgroundColor: "#DCEFED" },
+  repAvatarFallback: { alignItems: "center", justifyContent: "center" },
+  repAvatarInitials: { fontSize: 20, fontWeight: "700", color: color.brand.deepTeal },
+  repTextBlock: { flex: 1, minWidth: 0, alignItems: "flex-start" },
+  repRole: { fontSize: 13, lineHeight: 18, fontWeight: "400", color: "#5D6670" },
+  repName: { marginTop: 1, fontSize: 18, lineHeight: 24, fontWeight: "700", color: "#101418", letterSpacing: -0.2 },
+  repOffice: { marginTop: 1, fontSize: 14, lineHeight: 20, fontWeight: "400", color: "#252B30" },
+  repEmptyRow: { minHeight: 100, alignItems: "center", justifyContent: "center", paddingHorizontal: 20 },
+  repEmptyText: { fontSize: 14, lineHeight: 20, color: "#5D6670", textAlign: "center" },
+
+  repsFooter: { marginTop: "auto", paddingHorizontal: 28, paddingBottom: 20 },
+  primaryButton: {
+    height: 58,
+    borderRadius: 12,
+    backgroundColor: "#0D5F5B",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#101418",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 7,
+    elevation: 2,
+  },
+  primaryButtonPressed: { backgroundColor: "#094D4A", transform: [{ scale: 0.99 }] },
+  primaryButtonText: { fontSize: 17, lineHeight: 22, fontWeight: "600", color: "#FFFFFF" },
+  secondaryAction: { minHeight: 44, marginTop: 14, alignItems: "center", justifyContent: "center" },
+  secondaryActionText: { fontSize: 15, lineHeight: 20, fontWeight: "600", color: "#101418" },
   fieldLabel: { fontSize: 12, fontWeight: "700", color: color.light.ink, marginTop: 22, marginBottom: 8 },
   zipInput: { height: 54, borderRadius: radius.button, borderWidth: 1.5, borderColor: color.light.border, backgroundColor: "#fff", paddingHorizontal: 16, fontSize: 20, fontWeight: "600", color: color.light.ink },
   privacyNote: { flexDirection: "row", marginTop: 18 },
