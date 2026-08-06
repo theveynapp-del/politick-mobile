@@ -122,18 +122,40 @@ function rankFor(rep: Representative): number {
   return ROLE_RANK[rep.role] ?? 50;
 }
 
-async function fetchRepsFromDb(supabase: SupabaseClient, zip: string): Promise<Representative[]> {
+// Generation of the lookup logic behind a ZIP's stored coverage. Must stay in
+// sync with LOOKUP_VERSION in supabase/functions/lookup-representatives.
+// Bumping it makes ZIPs resolved by an older generation re-resolve rather than
+// serving a stale, narrower list — without this, every ZIP cached before
+// governors were added would never have shown one.
+const LOOKUP_VERSION = 2;
+
+interface CoverageRow {
+  source_version: number | null;
+  representatives: RepRow;
+}
+
+async function fetchCoverage(
+  supabase: SupabaseClient,
+  zip: string
+): Promise<{ reps: Representative[]; stale: boolean }> {
   const { data, error } = await supabase
     .from("rep_zip_coverage")
-    .select("representatives ( id, level, role, controls, name, jurisdiction_confidence, photo_url, phone, website )")
+    .select("source_version, representatives ( id, level, role, controls, name, jurisdiction_confidence, photo_url, phone, website )")
     .eq("zip", zip);
 
   if (error) {
     console.error("getRepresentativesByZip failed:", error.message);
-    return [];
+    return { reps: [], stale: false };
   }
 
-  return (data as unknown as { representatives: RepRow }[])
+  const rows = (data ?? []) as unknown as CoverageRow[];
+  const stale = rows.length > 0 && rows.some((r) => (r.source_version ?? 1) < LOOKUP_VERSION);
+
+  return { reps: mapReps(rows), stale };
+}
+
+function mapReps(rows: { representatives: RepRow }[]): Representative[] {
+  return rows
     .map((row) => ({
       id: row.representatives.id,
       level: row.representatives.level,
@@ -152,18 +174,25 @@ export async function getRepresentativesByZip(
   supabase: SupabaseClient,
   zip: string
 ): Promise<Representative[]> {
-  const cached = await fetchRepsFromDb(supabase, zip);
-  if (cached.length > 0) return cached;
+  const cached = await fetchCoverage(supabase, zip);
 
-  // Nothing stored for this ZIP yet. Without this the app only ever resolved
-  // the handful of ZIPs that had been pre-seeded, and every other real US ZIP
-  // showed "no representative data". The edge function fetches live from
-  // 5 Calls + Cicero and persists, keeping those API keys server-side.
+  // Serve stored coverage only when it came from the current generation of the
+  // lookup. Anything older is re-resolved so newly-added offices (governors and
+  // statewide executives) appear for ZIPs that were cached before them.
+  if (cached.reps.length > 0 && !cached.stale) return cached.reps;
+
+  // Nothing stored for this ZIP yet, or what's stored is out of date. Without
+  // this the app only ever resolved the handful of ZIPs that had been
+  // pre-seeded, and every other real US ZIP showed "no representative data".
+  // The edge function fetches live from 5 Calls + Cicero and persists,
+  // keeping those API keys server-side.
   const { error } = await supabase.functions.invoke("lookup-representatives", { body: { zip } });
   if (error) {
     console.error("lookup-representatives failed:", error.message);
-    return [];
+    // Stale results still beat an empty screen.
+    return cached.reps;
   }
 
-  return fetchRepsFromDb(supabase, zip);
+  const refreshed = await fetchCoverage(supabase, zip);
+  return refreshed.reps.length > 0 ? refreshed.reps : cached.reps;
 }

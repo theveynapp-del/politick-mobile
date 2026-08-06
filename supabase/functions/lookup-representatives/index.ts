@@ -19,6 +19,14 @@ const CICERO_API_KEY = Deno.env.get("CICERO_API_KEY");
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+// Generation of this lookup's logic. Bump whenever the set of officials
+// returned changes, so ZIPs resolved by an older generation re-resolve
+// instead of serving a stale, narrower list forever. Must stay in sync with
+// LOOKUP_VERSION in lib/queries.ts.
+//   1 -> federal + state legislature + local
+//   2 -> adds governors and statewide elected executives
+const LOOKUP_VERSION = 2;
+
 const AREA_MAP: Record<string, { level: "Federal" | "State"; role: string; controls: string }> = {
   "US House": { level: "Federal", role: "US House representative", controls: "Federal laws and spending" },
   "US Senate": { level: "Federal", role: "US Senator", controls: "Senate votes and confirmations" },
@@ -181,8 +189,19 @@ async function upsertRep(
     .eq("zip", zip)
     .eq("representative_id", repId)
     .maybeSingle();
-  if (!existingLink) {
-    await supabase.from("rep_zip_coverage").insert({ zip, representative_id: repId });
+
+  if (existingLink) {
+    // Re-stamp so a ZIP first resolved by an older generation counts as
+    // current once it has been re-run.
+    await supabase
+      .from("rep_zip_coverage")
+      .update({ source_version: LOOKUP_VERSION })
+      .eq("zip", zip)
+      .eq("representative_id", repId);
+  } else {
+    await supabase
+      .from("rep_zip_coverage")
+      .insert({ zip, representative_id: repId, source_version: LOOKUP_VERSION });
   }
 }
 
