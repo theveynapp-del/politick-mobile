@@ -1,7 +1,0 @@
-Read this UI guide and inspect `public/politick-approved-mockups.png` before changing code. Treat the mockup image as the visual source of truth. Refresh the Politick UI to match it exactly; do not redesign, rebrand or substitute a generic political-news aesthetic.
-
-Build the token layer and shared components first, then implement every route at a 390 x 844 viewport. Use the approved Paper, White, Civic Ink, Civic Teal, Deep Teal, Slate, Signal Gold and Warm Sand palette. Use Inter, 20 px mobile gutters, 16 px cards, restrained 1 px borders and minimal shadows. Keep the lowercase politick wordmark and one gold signal dot.
-
-Implement onboarding, Today / Daily 5, Everyday story detail, Go Deeper, Sources, representative profile, Explore, Saved and Profile. Preserve the exact hierarchy, spacing, card composition and bottom navigation shown in the reference. Do not add flags, stars, Capitol imagery, red-versus-blue framing, glossy gradients, glassmorphism or breaking-news visual urgency.
-
-Use demo fixtures for content and keep components ready for real APIs. After each page, compare it against the reference at 390 x 844 and correct spacing, type, color, radius and alignment differences before moving on. Finish by running the acceptance checklist in this document and report any intentional deviations.

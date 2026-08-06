@@ -7,10 +7,7 @@ import { ChevronLeft, MoreHorizontal, Phone, Mail, Globe, Navigation } from "luc
 import { color, radius } from "@/lib/tokens";
 import { supabase } from "@/lib/supabase";
 import { getRepresentativesByZip } from "@/lib/queries";
-import { getStoredZip } from "@/lib/onboarding";
 import { Representative } from "@/lib/types";
-
-const DEFAULT_ZIP = "20814";
 
 export default function RepresentativeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -19,10 +16,7 @@ export default function RepresentativeDetailScreen() {
   const [rep, setRep] = useState<Representative | null>(null);
 
   useEffect(() => {
-    getStoredZip().then((stored) => {
-      const zip = stored && stored.length === 5 ? stored : DEFAULT_ZIP;
-      getRepresentativesByZip(supabase, zip).then((all) => setRep(all.find((r) => r.id === id) ?? null));
-    });
+    getRepresentativesByZip(supabase, "20814").then((all) => setRep(all.find((r) => r.id === id) ?? null));
   }, [id]);
 
   if (!rep) return null;

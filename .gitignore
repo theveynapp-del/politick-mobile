@@ -40,7 +40,3 @@ yarn-error.*
 /ios
 /android
 .env
-
-# Test/QA artifacts
-screenshots/
-test-results/

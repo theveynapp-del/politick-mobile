@@ -1,6 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { Story, Representative, TopicScope, RepLevel } from "./types";
-import { stateForZip } from "./zipToState";
 
 /**
  * Data-access layer. Mirrors the shape of lib/mock-data.ts so the rest of
@@ -20,7 +19,6 @@ interface StoryRow {
   cosponsors: string;
   next_checkpoint: string;
   fiscal_note: string;
-  state: string | null;
   sources: { label: string; type: Story["sources"][number]["type"]; domain: string }[];
   story_zip_relevance: { zip: string; note: string }[];
 }
@@ -67,7 +65,7 @@ export async function getTodayStories(
     .from("stories")
     .select(
       `id, topic, scope, updated_at, headline, what_happened, why_it_matters,
-       status, sponsor, cosponsors, next_checkpoint, fiscal_note, state,
+       status, sponsor, cosponsors, next_checkpoint, fiscal_note,
        sources ( label, type, domain ),
        story_zip_relevance ( zip, note )`
     )
@@ -78,17 +76,7 @@ export async function getTodayStories(
     return [];
   }
 
-  // Federal and World stories are relevant nationwide. Local and State
-  // stories only have real ingested coverage for the states we've actually
-  // synced — showing Montgomery County zoning news to someone in Texas
-  // under a "Local" label would misrepresent it as their own area, so
-  // those scopes are filtered to the user's real state.
-  const userState = stateForZip(zip);
-  const rows = (data as unknown as StoryRow[]).filter(
-    (row) => row.scope === "Federal" || row.scope === "World" || row.state === userState
-  );
-
-  return rows.map((row) => mapStory(row, zip));
+  return (data as unknown as StoryRow[]).map((row) => mapStory(row, zip));
 }
 
 interface RepRow {
@@ -103,7 +91,10 @@ interface RepRow {
   website: string | null;
 }
 
-async function fetchRepsFromDb(supabase: SupabaseClient, zip: string): Promise<Representative[]> {
+export async function getRepresentativesByZip(
+  supabase: SupabaseClient,
+  zip: string
+): Promise<Representative[]> {
   const { data, error } = await supabase
     .from("rep_zip_coverage")
     .select("representatives ( id, level, role, controls, name, jurisdiction_confidence, photo_url, phone, website )")
@@ -125,24 +116,4 @@ async function fetchRepsFromDb(supabase: SupabaseClient, zip: string): Promise<R
     phone: row.representatives.phone,
     website: row.representatives.website,
   }));
-}
-
-export async function getRepresentativesByZip(
-  supabase: SupabaseClient,
-  zip: string
-): Promise<Representative[]> {
-  const cached = await fetchRepsFromDb(supabase, zip);
-  if (cached.length > 0) return cached;
-
-  // No one has looked up this ZIP before — ask the lookup-representatives
-  // edge function to fetch it live from 5 Calls + Cicero and persist it,
-  // then re-read from the DB. Keeps the real API keys server-side instead
-  // of bundling them into the app.
-  const { error } = await supabase.functions.invoke("lookup-representatives", { body: { zip } });
-  if (error) {
-    console.error("lookup-representatives failed:", error.message);
-    return [];
-  }
-
-  return fetchRepsFromDb(supabase, zip);
 }

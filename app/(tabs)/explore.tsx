@@ -11,10 +11,8 @@ import { StoryCard } from "@/components/StoryCard";
 import { WorldMapIllustration } from "@/components/WorldMapIllustration";
 import { getSavedIds, toggleSavedId } from "@/lib/savedStories";
 import { searchExplore, ExploreSearchResult } from "@/lib/exploreSearch";
-import { getStoredZip } from "@/lib/onboarding";
 
 const TOPICS = ["Economy", "Housing", "Healthcare", "Tax Policy", "Immigration", "Energy"];
-const DEFAULT_ZIP = "20814";
 
 export default function ExploreScreen() {
   const [query, setQuery] = useState("");
@@ -25,10 +23,7 @@ export default function ExploreScreen() {
   const [activeQuery, setActiveQuery] = useState<string | null>(null);
 
   useEffect(() => {
-    getStoredZip().then((stored) => {
-      const zip = stored && stored.length === 5 ? stored : DEFAULT_ZIP;
-      getTodayStories(supabase, zip).then((all) => setWorldStories(all.filter((s) => s.scope === "World")));
-    });
+    getTodayStories(supabase, "20814").then((all) => setWorldStories(all.filter((s) => s.scope === "World")));
     getSavedIds().then(setSavedIds);
   }, []);
 
