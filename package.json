@@ -35,6 +35,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "check:wiring": "node scripts/check-wiring.mjs",
+    "setup:hooks": "git config core.hooksPath .githooks",
     "sync:congress": "tsx --env-file=.env scripts/sync-congress.ts",
     "sync:reps": "tsx --env-file=.env scripts/sync-representatives.ts",
     "sync:cicero": "tsx --env-file=.env scripts/sync-cicero.ts"
