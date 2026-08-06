@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
-import { View, TextInput, Pressable, StyleSheet, ScrollView, ActivityIndicator, Switch, Alert, Image } from "react-native";
+import { useState, useCallback, useRef } from "react";
+import { View, TextInput, Pressable, StyleSheet, ScrollView, ActivityIndicator, Switch, Alert, Image, Keyboard } from "react-native";
 import { Text } from "@/components/Text";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -49,6 +49,16 @@ export default function OnboardingScreen() {
 
   const stepIndex = STEP_ORDER.indexOf(step);
   const stepNumber = stepIndex + 1;
+
+  const zipInputRef = useRef<TextInput>(null);
+
+  // Keyboard.dismiss() alone is unreliable on RN Web (it leaves the field
+  // focused), so blur the input directly as well. On iOS this is what
+  // actually drops the number-pad, which has no return key to close it.
+  const dismissKeyboard = useCallback(() => {
+    zipInputRef.current?.blur();
+    Keyboard.dismiss();
+  }, []);
 
   const findDistricts = useCallback(async () => {
     if (zip.length !== 5) return;
@@ -149,6 +159,10 @@ export default function OnboardingScreen() {
       )}
 
       {step === "zip" && (
+        // Deliberately a View, not a Pressable. Wrapping this screen in a
+        // Pressable to get tap-outside-to-dismiss makes the wrapper swallow
+        // taps aimed at the ZIP field and blur it, so the field can't be
+        // focused at all. Dismissal is handled on the 5th digit instead.
         <View style={styles.page}>
           <Text style={styles.h1}>Where do you live?</Text>
           <Text style={styles.bodyMuted}>
@@ -156,13 +170,22 @@ export default function OnboardingScreen() {
           </Text>
           <Text style={styles.fieldLabel}>ZIP Code</Text>
           <TextInput
+            ref={zipInputRef}
             style={styles.zipInput}
             value={zip}
-            onChangeText={setZip}
+            onChangeText={(v) => {
+              const digits = v.replace(/[^0-9]/g, "").slice(0, 5);
+              setZip(digits);
+              // A ZIP is always 5 digits, so the 5th one is an unambiguous
+              // "done" — drop the keyboard so Continue is reachable.
+              if (digits.length === 5) dismissKeyboard();
+            }}
             keyboardType="number-pad"
             maxLength={5}
             placeholder="20814"
             placeholderTextColor={color.light.muted}
+            returnKeyType="done"
+            onSubmitEditing={dismissKeyboard}
           />
           <View style={styles.privacyNote}>
             <Text style={styles.privacyNoteText}>
@@ -173,7 +196,14 @@ export default function OnboardingScreen() {
           {loadingReps ? (
             <ActivityIndicator color={color.brand.deepTeal} />
           ) : (
-            <Button variant="Primary" disabled={zip.length !== 5} onPress={findDistricts}>
+            <Button
+              variant="Primary"
+              disabled={zip.length !== 5}
+              onPress={() => {
+                dismissKeyboard();
+                findDistricts();
+              }}
+            >
               Continue
             </Button>
           )}

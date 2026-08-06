@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, TextInput, Pressable, StyleSheet, Switch, ScrollView } from "react-native";
+import { View, TextInput, Pressable, StyleSheet, Switch, ScrollView, Keyboard } from "react-native";
 import { Text } from "@/components/Text";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -38,6 +38,7 @@ export default function YouScreen() {
 
   const saveZip = async () => {
     if (zip.length !== 5) return;
+    Keyboard.dismiss();
     await setStoredZip(zip);
     setEditingZip(false);
   };
@@ -70,10 +71,16 @@ export default function YouScreen() {
               <TextInput
                 style={styles.zipInput}
                 value={zip}
-                onChangeText={setZip}
+                onChangeText={(v) => {
+                  const digits = v.replace(/[^0-9]/g, "").slice(0, 5);
+                  setZip(digits);
+                  if (digits.length === 5) Keyboard.dismiss();
+                }}
                 keyboardType="number-pad"
                 maxLength={5}
                 autoFocus
+                returnKeyType="done"
+                onSubmitEditing={Keyboard.dismiss}
               />
               <Pressable onPress={saveZip} style={styles.saveBtn}>
                 <Text style={styles.saveBtnText}>Save</Text>
