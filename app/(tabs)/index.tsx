@@ -9,17 +9,16 @@ import { getTodayStories } from "@/lib/queries";
 import { Story, TopicScope } from "@/lib/types";
 import { StoryCard } from "@/components/StoryCard";
 import { Wordmark } from "@/components/Wordmark";
-import { getStoredZip } from "@/lib/onboarding";
+import { getStoredZip, getStoredName } from "@/lib/onboarding";
 import { getSavedIds, toggleSavedId } from "@/lib/savedStories";
 
 const DEFAULT_ZIP = "20814";
 const FILTERS: (TopicScope | "All")[] = ["All", "Local", "State", "Federal", "World"];
 
-function greeting() {
+function greeting(name: string | null) {
   const h = new Date().getHours();
-  if (h < 12) return "Good morning.";
-  if (h < 18) return "Good afternoon.";
-  return "Good evening.";
+  const base = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+  return name ? `${base}, ${name}.` : `${base}.`;
 }
 
 function todayLabel() {
@@ -29,6 +28,7 @@ function todayLabel() {
 export default function TodayScreen() {
   const [filter, setFilter] = useState<TopicScope | "All">("All");
   const [zip, setZip] = useState(DEFAULT_ZIP);
+  const [name, setName] = useState<string | null>(null);
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState<Record<string, boolean>>({});
@@ -49,6 +49,7 @@ export default function TodayScreen() {
       load(initialZip);
     });
     getSavedIds().then((ids) => setSaved(Object.fromEntries(ids.map((id) => [id, true]))));
+    getStoredName().then(setName);
   }, [load]);
 
   const visible = filter === "All" ? stories : stories.filter((s) => s.scope === filter);
@@ -70,7 +71,7 @@ export default function TodayScreen() {
         </View>
 
         {/* Greeting and date appear before "Your Daily 5" per the guide. */}
-        <Text style={styles.greeting}>{greeting()}</Text>
+        <Text style={styles.greeting}>{greeting(name)}</Text>
         <Text style={styles.dateLabel}>{todayLabel()}</Text>
 
         <View style={styles.dailyFiveRow}>

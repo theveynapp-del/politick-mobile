@@ -5,6 +5,8 @@ const KEYS = {
   zip: "politick.zip",
   topics: "politick.topics",
   notificationsEnabled: "politick.notificationsEnabled",
+  name: "politick.name",
+  email: "politick.email",
 } as const;
 
 export async function getOnboardingComplete(): Promise<boolean> {
@@ -30,6 +32,22 @@ export async function getStoredTopics(): Promise<string[]> {
 
 export async function setStoredTopics(topics: string[]) {
   await AsyncStorage.setItem(KEYS.topics, JSON.stringify(topics));
+}
+
+export async function getStoredName(): Promise<string | null> {
+  return AsyncStorage.getItem(KEYS.name);
+}
+
+export async function setStoredName(name: string) {
+  await AsyncStorage.setItem(KEYS.name, name);
+}
+
+export async function getStoredEmail(): Promise<string | null> {
+  return AsyncStorage.getItem(KEYS.email);
+}
+
+export async function setStoredEmail(email: string) {
+  await AsyncStorage.setItem(KEYS.email, email);
 }
 
 export async function getNotificationsEnabled(): Promise<boolean> {

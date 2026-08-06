@@ -13,15 +13,15 @@ import { stateForZip } from "@/lib/zipToState";
 import {
   setOnboardingComplete,
   setStoredZip,
+  setStoredName,
   setStoredTopics,
   setNotificationsEnabled,
 } from "@/lib/onboarding";
 
-// Five distinct steps, matching the approved reference board's
-// "Onboarding 1 of 5" through "5 of 5" numbering exactly — interests and
-// notifications are separate steps now, not merged into one screen.
-type Step = "welcome" | "zip" | "confirm" | "interests" | "notifications";
-const STEP_ORDER: Step[] = ["welcome", "zip", "confirm", "interests", "notifications"];
+// Step numbering ("Onboarding X of {STEP_ORDER.length}") is fully dynamic,
+// so adding a step here doesn't require touching every screen's label.
+type Step = "welcome" | "name" | "zip" | "confirm" | "interests" | "notifications";
+const STEP_ORDER: Step[] = ["welcome", "name", "zip", "confirm", "interests", "notifications"];
 
 const TOPIC_OPTIONS = [
   "Local government",
@@ -40,6 +40,7 @@ export default function OnboardingScreen() {
   const router = useRouter();
   const [step, setStep] = useState<Step>("welcome");
   const [confirmTab, setConfirmTab] = useState<RepLevel>("Federal");
+  const [name, setName] = useState("");
   const [zip, setZip] = useState("");
   const [reps, setReps] = useState<Representative[]>([]);
   const [loadingReps, setLoadingReps] = useState(false);
@@ -69,6 +70,7 @@ export default function OnboardingScreen() {
 
   const finish = async () => {
     setFinishing(true);
+    if (name.trim()) await setStoredName(name.trim());
     await setStoredZip(zip);
     await setStoredTopics(topics);
     await setNotificationsEnabled(notifChoice === "daily");
@@ -95,7 +97,8 @@ export default function OnboardingScreen() {
   };
 
   const goBack = () => {
-    if (step === "zip") setStep("welcome");
+    if (step === "name") setStep("welcome");
+    if (step === "zip") setStep("name");
     if (step === "confirm") setStep("zip");
     if (step === "interests") setStep("confirm");
     if (step === "notifications") setStep("interests");
@@ -129,11 +132,35 @@ export default function OnboardingScreen() {
             <CivicIllustration />
           </View>
           <View style={{ flex: 1 }} />
-          <Button variant="Primary" onPress={() => setStep("zip")}>
+          <Button variant="Primary" onPress={() => setStep("name")}>
             Get Started
           </Button>
           <Pressable onPress={skipOnboarding} style={styles.textBtn}>
             <Text style={styles.textBtnLabel}>I already have an account</Text>
+          </Pressable>
+        </View>
+      )}
+
+      {step === "name" && (
+        <View style={styles.page}>
+          <Text style={styles.h1}>What should we call you?</Text>
+          <Text style={styles.bodyMuted}>Personalizes your daily briefing. Totally optional.</Text>
+          <Text style={styles.fieldLabel}>First name</Text>
+          <TextInput
+            style={styles.zipInput}
+            value={name}
+            onChangeText={setName}
+            autoComplete="name"
+            autoCapitalize="words"
+            placeholder="First name"
+            placeholderTextColor={color.light.muted}
+          />
+          <View style={{ flex: 1 }} />
+          <Button variant="Primary" onPress={() => setStep("zip")}>
+            Continue
+          </Button>
+          <Pressable onPress={() => setStep("zip")} style={styles.textBtn}>
+            <Text style={styles.textBtnLabel}>Skip</Text>
           </Pressable>
         </View>
       )}

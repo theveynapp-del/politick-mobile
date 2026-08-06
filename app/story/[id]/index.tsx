@@ -11,6 +11,9 @@ import { Story } from "@/lib/types";
 import { storyImages } from "@/lib/storyImages";
 import { StoryThumbnail } from "@/components/StoryThumbnail";
 import { getSavedIds, toggleSavedId } from "@/lib/savedStories";
+import { getStoredZip } from "@/lib/onboarding";
+
+const DEFAULT_ZIP = "20814";
 
 export default function StoryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -20,8 +23,11 @@ export default function StoryDetailScreen() {
   const [story, setStory] = useState<Story | null>(null);
 
   useEffect(() => {
-    getTodayStories(supabase, "20814").then((all) => {
-      setStory(all.find((s) => s.id === id) ?? null);
+    getStoredZip().then((stored) => {
+      const zip = stored && stored.length === 5 ? stored : DEFAULT_ZIP;
+      getTodayStories(supabase, zip).then((all) => {
+        setStory(all.find((s) => s.id === id) ?? null);
+      });
     });
     if (id) getSavedIds().then((ids) => setSaved(ids.includes(id)));
   }, [id]);

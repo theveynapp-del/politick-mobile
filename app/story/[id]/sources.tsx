@@ -7,7 +7,10 @@ import { ChevronLeft, ExternalLink } from "lucide-react-native";
 import { color, radius } from "@/lib/tokens";
 import { supabase } from "@/lib/supabase";
 import { getTodayStories } from "@/lib/queries";
+import { getStoredZip } from "@/lib/onboarding";
 import { Story } from "@/lib/types";
+
+const DEFAULT_ZIP = "20814";
 
 export default function SourcesScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -16,7 +19,10 @@ export default function SourcesScreen() {
   const [story, setStory] = useState<Story | null>(null);
 
   useEffect(() => {
-    getTodayStories(supabase, "20814").then((all) => setStory(all.find((s) => s.id === id) ?? null));
+    getStoredZip().then((stored) => {
+      const zip = stored && stored.length === 5 ? stored : DEFAULT_ZIP;
+      getTodayStories(supabase, zip).then((all) => setStory(all.find((s) => s.id === id) ?? null));
+    });
   }, [id]);
 
   if (!story) return null;
