@@ -102,6 +102,26 @@ interface RepRow {
   website: string | null;
 }
 
+// Officials arrive in arbitrary order, which would bury the Governor below
+// backbench legislators. Rank by prominence within each level so the offices
+// people look for first appear first.
+const ROLE_RANK: Record<string, number> = {
+  Governor: 0,
+  "Lieutenant Governor": 1,
+  "Attorney General": 2,
+  "Secretary of State": 3,
+  Comptroller: 4,
+  Treasurer: 5,
+  "US Senator": 10,
+  "US House representative": 11,
+  Mayor: 20,
+  "County Executive": 21,
+};
+
+function rankFor(rep: Representative): number {
+  return ROLE_RANK[rep.role] ?? 50;
+}
+
 async function fetchRepsFromDb(supabase: SupabaseClient, zip: string): Promise<Representative[]> {
   const { data, error } = await supabase
     .from("rep_zip_coverage")
@@ -113,17 +133,19 @@ async function fetchRepsFromDb(supabase: SupabaseClient, zip: string): Promise<R
     return [];
   }
 
-  return (data as unknown as { representatives: RepRow }[]).map((row) => ({
-    id: row.representatives.id,
-    level: row.representatives.level,
-    role: row.representatives.role,
-    controls: row.representatives.controls,
-    name: row.representatives.name,
-    jurisdictionConfidence: row.representatives.jurisdiction_confidence,
-    photoUrl: row.representatives.photo_url,
-    phone: row.representatives.phone,
-    website: row.representatives.website,
-  }));
+  return (data as unknown as { representatives: RepRow }[])
+    .map((row) => ({
+      id: row.representatives.id,
+      level: row.representatives.level,
+      role: row.representatives.role,
+      controls: row.representatives.controls,
+      name: row.representatives.name,
+      jurisdictionConfidence: row.representatives.jurisdiction_confidence,
+      photoUrl: row.representatives.photo_url,
+      phone: row.representatives.phone,
+      website: row.representatives.website,
+    }))
+    .sort((a, b) => rankFor(a) - rankFor(b) || a.name.localeCompare(b.name));
 }
 
 export async function getRepresentativesByZip(

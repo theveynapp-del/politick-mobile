@@ -79,11 +79,25 @@ function roleLineFor(rep: Representative): string {
   return rep.role;
 }
 
+// Statewide elected executives — they hold office in the state government,
+// not the legislature, so they must not be labelled as legislators.
+const STATE_EXEC_ROLES = new Set([
+  "Governor",
+  "Lieutenant Governor",
+  "Attorney General",
+  "Secretary of State",
+  "Comptroller",
+  "Treasurer",
+]);
+
 function officeLineFor(rep: Representative, stateName: string | null): string {
   if (rep.level === "Federal") {
     return /senator/i.test(rep.role) ? "U.S. Senate" : "U.S. House";
   }
   if (rep.level === "State") {
+    if (STATE_EXEC_ROLES.has(rep.role)) {
+      return stateName ? `State of ${stateName}` : "Statewide office";
+    }
     return stateName ? `${stateName} Legislature` : "State legislature";
   }
   // Local roles (Supervisor, Councilmember, Mayor…) already carry the office
@@ -101,6 +115,10 @@ export default function OnboardingScreen() {
   // Hills officials presented as their own.
   const [zip, setZip] = useState("");
   const [zipError, setZipError] = useState(false);
+  // Some official portrait URLs from the data source are dead links (the
+  // Maryland governor's is a 404). Without tracking load failures the row
+  // renders an empty circle instead of falling back to initials.
+  const [failedPhotos, setFailedPhotos] = useState<Record<string, boolean>>({});
   const [reps, setReps] = useState<Representative[]>([]);
   const [loadingReps, setLoadingReps] = useState(false);
   const [lookupFailed, setLookupFailed] = useState(false);
@@ -399,11 +417,12 @@ export default function OnboardingScreen() {
                 visibleReps.map((rep, i) => (
                   <View key={rep.id} style={[styles.repRow, compact && styles.repRowCompact]}>
                     {i > 0 && <View style={styles.repDivider} />}
-                    {rep.photoUrl ? (
+                    {rep.photoUrl && !failedPhotos[rep.id] ? (
                       <Image
                         source={{ uri: rep.photoUrl }}
                         style={styles.repAvatar}
                         accessibilityLabel={`Portrait of ${rep.name}`}
+                        onError={() => setFailedPhotos((prev) => ({ ...prev, [rep.id]: true }))}
                       />
                     ) : (
                       <View style={[styles.repAvatar, styles.repAvatarFallback]}>
