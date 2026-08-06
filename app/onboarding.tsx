@@ -1,7 +1,8 @@
 import { useState, useCallback, useRef } from "react";
-import { View, TextInput, Pressable, StyleSheet, ScrollView, ActivityIndicator, Switch, Alert, Image, Keyboard } from "react-native";
+import { View, TextInput, Pressable, StyleSheet, ScrollView, ActivityIndicator, Switch, Alert, Image, Keyboard, useWindowDimensions } from "react-native";
+import { Navigation, Lock } from "lucide-react-native";
 import { Text } from "@/components/Text";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { color, radius } from "@/lib/tokens";
 import { supabase } from "@/lib/supabase";
@@ -39,7 +40,9 @@ export default function OnboardingScreen() {
   const router = useRouter();
   const [step, setStep] = useState<Step>("welcome");
   const [confirmTab, setConfirmTab] = useState<RepLevel>("Federal");
-  const [zip, setZip] = useState("");
+  // Spec calls for 90210 as the location screen's default value.
+  const [zip, setZip] = useState("90210");
+  const [zipError, setZipError] = useState(false);
   const [reps, setReps] = useState<Representative[]>([]);
   const [loadingReps, setLoadingReps] = useState(false);
   const [lookupFailed, setLookupFailed] = useState(false);
@@ -50,7 +53,23 @@ export default function OnboardingScreen() {
   const stepIndex = STEP_ORDER.indexOf(step);
   const stepNumber = stepIndex + 1;
 
+  // Mirrors the spec's `@media (max-height: 820px)` block — tightens the
+  // location screen's vertical rhythm on shorter devices (e.g. 375x812).
+  const { height: windowHeight } = useWindowDimensions();
+  const compact = windowHeight <= 820;
+
+  // The wrapping SafeAreaView already applies the device inset. This tops it
+  // up to the spec's `max(20px, env(safe-area-inset-*))` floor, which matters
+  // on surfaces with no inset at all (web) where the label and the Continue
+  // button would otherwise sit flush against the edges.
+  const insets = useSafeAreaInsets();
+  const topFloor = Math.max(0, 20 - insets.top);
+
   const zipInputRef = useRef<TextInput>(null);
+  // onBlur fires in the same render as the 5th-digit auto-dismiss, so reading
+  // `zip` there sees the previous (4-digit) value and wrongly flags an error.
+  // This ref always holds the committed value.
+  const zipValueRef = useRef(zip);
 
   // Keyboard.dismiss() alone is unreliable on RN Web (it leaves the field
   // focused), so blur the input directly as well. On iOS this is what
@@ -116,7 +135,10 @@ export default function OnboardingScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-      {step !== "welcome" && (
+      {/* The location screen renders its own progress label inside its
+          content column (28px gutter, no back button) per its spec, so it
+          opts out of the shared step header. */}
+      {step !== "welcome" && step !== "zip" && (
         <View style={styles.stepHeader}>
           <Pressable onPress={goBack} hitSlop={8}>
             <Text style={styles.backArrow}>{"\u2190"}</Text>
@@ -163,50 +185,112 @@ export default function OnboardingScreen() {
         // Pressable to get tap-outside-to-dismiss makes the wrapper swallow
         // taps aimed at the ZIP field and blur it, so the field can't be
         // focused at all. Dismissal is handled on the 5th digit instead.
-        <View style={styles.page}>
-          <Text style={styles.h1}>Where do you live?</Text>
-          <Text style={styles.bodyMuted}>
-            We&rsquo;ll show you the people who represent you and what matters in your area.
-          </Text>
-          <Text style={styles.fieldLabel}>ZIP Code</Text>
-          <TextInput
-            ref={zipInputRef}
-            style={styles.zipInput}
-            value={zip}
-            onChangeText={(v) => {
-              const digits = v.replace(/[^0-9]/g, "").slice(0, 5);
-              setZip(digits);
-              // A ZIP is always 5 digits, so the 5th one is an unambiguous
-              // "done" — drop the keyboard so Continue is reachable.
-              if (digits.length === 5) dismissKeyboard();
-            }}
-            keyboardType="number-pad"
-            maxLength={5}
-            placeholder="20814"
-            placeholderTextColor={color.light.muted}
-            returnKeyType="done"
-            onSubmitEditing={dismissKeyboard}
-          />
-          <View style={styles.privacyNote}>
-            <Text style={styles.privacyNoteText}>
-              🔒 We only use this to personalize your experience. Your data stays private.
+        <View style={[styles.locationScreen, { paddingTop: topFloor }]}>
+          <View style={styles.locationContent}>
+            <Text style={[styles.progressLabel, compact && styles.progressLabelCompact]}>
+              Onboarding {stepNumber} of {STEP_ORDER.length}
             </Text>
+
+            <Text style={[styles.locationHeadline, compact && styles.locationHeadlineCompact]}>
+              Where do you live?
+            </Text>
+
+            {/* Line breaks are explicit so the copy wraps into the three
+                lines the reference shows, at any of the target widths. */}
+            <Text style={[styles.locationDescription, compact && styles.locationDescriptionCompact]}>
+              {"We’ll show you the people who\nrepresent you and what matters\nin your area."}
+            </Text>
+
+            <View style={[styles.zipFieldGroup, compact && styles.zipFieldGroupCompact]}>
+              <Text style={styles.zipLabel} nativeID="zipLabel">
+                ZIP Code
+              </Text>
+
+              <View style={[styles.zipField, zipError && styles.zipFieldError]}>
+                <TextInput
+                  ref={zipInputRef}
+                  style={styles.zipFieldInput}
+                  value={zip}
+                  onChangeText={(v) => {
+                    const digits = v.replace(/[^0-9]/g, "").slice(0, 5);
+                    zipValueRef.current = digits;
+                    setZip(digits);
+                    if (zipError) setZipError(false);
+                    // A ZIP is always 5 digits, so the 5th one is an
+                    // unambiguous "done" — drop the keyboard so Continue
+                    // is reachable (iOS number-pad has no return key).
+                    if (digits.length === 5) dismissKeyboard();
+                  }}
+                  onBlur={() => {
+                    const v = zipValueRef.current;
+                    setZipError(v.length > 0 && v.length !== 5);
+                  }}
+                  keyboardType="number-pad"
+                  inputMode="numeric"
+                  autoComplete="postal-code"
+                  maxLength={5}
+                  returnKeyType="done"
+                  onSubmitEditing={dismissKeyboard}
+                  accessibilityLabel="ZIP Code"
+                  accessibilityLabelledBy="zipLabel"
+                />
+
+                <Pressable
+                  style={styles.locationButton}
+                  accessibilityRole="button"
+                  accessibilityLabel="Use my current location"
+                  onPress={dismissKeyboard}
+                >
+                  <Navigation size={23} color="#101418" strokeWidth={1.85} fill="none" />
+                </Pressable>
+              </View>
+
+              {/* Fixed-height slot so showing the error doesn't shift the
+                  layout or move the Continue button. */}
+              <View style={styles.zipErrorSlot}>
+                {zipError && <Text style={styles.zipErrorText}>Enter a valid 5-digit ZIP code.</Text>}
+              </View>
+            </View>
+
+            <View style={[styles.privacyRow, compact && styles.privacyRowCompact]}>
+              <View style={styles.privacyIconCol}>
+                <Lock size={24} color="#252B30" strokeWidth={1.8} />
+              </View>
+              <Text style={styles.privacyText}>
+                {"We only use this to personalize\nyour experience. Your data\nstays private."}
+              </Text>
+            </View>
           </View>
-          <View style={{ flex: 1 }} />
-          {loadingReps ? (
-            <ActivityIndicator color={color.brand.deepTeal} />
-          ) : (
-            <Button
-              variant="Primary"
-              disabled={zip.length !== 5}
-              onPress={() => {
-                dismissKeyboard();
-                findDistricts();
-              }}
-            >
-              Continue
-            </Button>
-          )}
+
+          <View style={styles.locationFooter}>
+            {loadingReps ? (
+              <ActivityIndicator color={color.brand.deepTeal} style={{ height: 58 }} />
+            ) : (
+              <Pressable
+                style={({ pressed }) => [
+                  styles.continueButton,
+                  zip.length !== 5 && styles.continueButtonDisabled,
+                  pressed && zip.length === 5 && styles.continueButtonPressed,
+                ]}
+                disabled={zip.length !== 5}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: zip.length !== 5 }}
+                onPress={() => {
+                  dismissKeyboard();
+                  findDistricts();
+                }}
+              >
+                <Text
+                  style={[
+                    styles.continueButtonText,
+                    zip.length !== 5 && styles.continueButtonTextDisabled,
+                  ]}
+                >
+                  Continue
+                </Text>
+              </Pressable>
+            )}
+          </View>
         </View>
       )}
 
@@ -360,6 +444,74 @@ const styles = StyleSheet.create({
   textBtnLabel: { color: color.brand.deepTeal, fontWeight: "700" },
 
   page: { flex: 1, padding: 20 },
+
+  /* ---------- Onboarding 2: location (scoped to this screen only) ---------- */
+  locationScreen: { flex: 1, backgroundColor: color.light.canvas },
+  locationContent: { paddingHorizontal: 28 },
+
+  progressLabel: { marginTop: 30, fontSize: 14, lineHeight: 20, fontWeight: "600", color: "#41484F", letterSpacing: -0.1 },
+  progressLabelCompact: { marginTop: 22 },
+
+  locationHeadline: { marginTop: 36, fontSize: 30, lineHeight: 36, fontWeight: "700", color: "#101418", letterSpacing: -0.55 },
+  locationHeadlineCompact: { marginTop: 30 },
+
+  locationDescription: { marginTop: 24, fontSize: 18, lineHeight: 28, fontWeight: "400", color: "#252B30", letterSpacing: -0.1 },
+  locationDescriptionCompact: { marginTop: 20 },
+
+  zipFieldGroup: { marginTop: 50 },
+  zipFieldGroupCompact: { marginTop: 38 },
+  zipLabel: { marginBottom: 10, fontSize: 15, lineHeight: 20, fontWeight: "600", color: "#252B30" },
+
+  zipField: {
+    height: 72,
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#D8D2C7",
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.28)",
+    overflow: "hidden",
+  },
+  zipFieldError: { borderColor: color.brand.actionCoral },
+  zipFieldInput: {
+    flex: 1,
+    minWidth: 0,
+    height: "100%",
+    paddingLeft: 18,
+    fontSize: 21,
+    lineHeight: 28,
+    fontWeight: "500",
+    color: "#101418",
+  },
+  // 52x52 visual, but hitSlop-free 44x44 minimum is already satisfied.
+  locationButton: { width: 52, height: 52, marginRight: 8, alignItems: "center", justifyContent: "center" },
+
+  // Reserved height keeps Continue from shifting when the error appears.
+  zipErrorSlot: { minHeight: 22, justifyContent: "center" },
+  zipErrorText: { marginTop: 4, fontSize: 13.5, lineHeight: 18, fontWeight: "500", color: color.brand.actionCoral },
+
+  privacyRow: { marginTop: 28, flexDirection: "row", alignItems: "flex-start" },
+  privacyRowCompact: { marginTop: 22 },
+  privacyIconCol: { width: 28, marginRight: 14, alignItems: "flex-start" },
+  privacyText: { flex: 1, fontSize: 15, lineHeight: 22, fontWeight: "400", color: "#5D6670" },
+
+  locationFooter: { marginTop: "auto", paddingHorizontal: 28, paddingBottom: 24 },
+  continueButton: {
+    height: 58,
+    borderRadius: 12,
+    backgroundColor: "#0D5F5B",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#101418",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 7,
+    elevation: 2,
+  },
+  continueButtonPressed: { backgroundColor: "#094D4A", transform: [{ scale: 0.99 }] },
+  continueButtonDisabled: { backgroundColor: "#A9B5B4", shadowOpacity: 0, elevation: 0 },
+  continueButtonText: { fontSize: 17, lineHeight: 22, fontWeight: "600", color: "#FFFFFF" },
+  continueButtonTextDisabled: { color: "rgba(255,255,255,0.85)" },
   fieldLabel: { fontSize: 12, fontWeight: "700", color: color.light.ink, marginTop: 22, marginBottom: 8 },
   zipInput: { height: 54, borderRadius: radius.button, borderWidth: 1.5, borderColor: color.light.border, backgroundColor: "#fff", paddingHorizontal: 16, fontSize: 20, fontWeight: "600", color: color.light.ink },
   privacyNote: { flexDirection: "row", marginTop: 18 },
