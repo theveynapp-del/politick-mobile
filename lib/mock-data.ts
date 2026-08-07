@@ -130,6 +130,7 @@ export const todayStories: Story[] = [
 export const representatives: Representative[] = [
   {
     id: "r1",
+    externalId: null,
     level: "Federal",
     role: "US Senator",
     controls: "Senate votes and confirmations",
@@ -142,6 +143,7 @@ export const representatives: Representative[] = [
   },
   {
     id: "r2",
+    externalId: null,
     level: "Federal",
     role: "US Senator",
     controls: "Senate votes and confirmations",
@@ -154,6 +156,7 @@ export const representatives: Representative[] = [
   },
   {
     id: "r3",
+    externalId: null,
     level: "Federal",
     role: "US House representative",
     controls: "Federal laws and spending",
@@ -166,6 +169,7 @@ export const representatives: Representative[] = [
   },
   {
     id: "r4",
+    externalId: null,
     level: "State",
     role: "State delegate",
     controls: "State laws and budget",
@@ -178,6 +182,7 @@ export const representatives: Representative[] = [
   },
   {
     id: "r5",
+    externalId: null,
     level: "County",
     role: "County council member",
     controls: "Zoning, roads, local services",

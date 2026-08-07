@@ -7,50 +7,82 @@ import {
   ScrollView,
   Image,
   ActivityIndicator,
-  useWindowDimensions,
   Linking,
+  useWindowDimensions,
 } from "react-native";
 import { Text } from "@/components/Text";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Search, Sparkles, ChevronRight, ExternalLink } from "lucide-react-native";
-import { stateForZip } from "@/lib/zipToState";
-import { getStoredTopics } from "@/lib/onboarding";
 import { color } from "@/lib/tokens";
 import { supabase } from "@/lib/supabase";
-import { getTodayStories } from "@/lib/queries";
-import { getStoredZip } from "@/lib/onboarding";
-import { Story } from "@/lib/types";
+import { getTodayStories, getRepresentativesByZip, getZipLocation } from "@/lib/queries";
+import { stateForZip } from "@/lib/zipToState";
+import { getStoredZip, getStoredTopics } from "@/lib/onboarding";
+import { Story, Representative } from "@/lib/types";
 import { estimateReadMinutes } from "@/lib/readTime";
 import { searchExplore, ExploreSearchResult } from "@/lib/exploreSearch";
 import { searchBills, BillSearchResult } from "@/lib/billSearch";
+import { getGovActivity, bioguideIdsFor, GovActivityItem } from "@/lib/govActivity";
+import { detectTerm, JargonTerm } from "@/lib/jargon";
+import { stageFromAction } from "@/lib/billStage";
+import { SectionHeader } from "@/components/explore/SectionHeader";
+import {
+  GovernmentActivityCard,
+  OfficialActivityCard,
+  ContextLearningCard,
+  IssueChip,
+  ElectionCenterCard,
+} from "@/components/explore/cards";
+import { JargonSheet } from "@/components/explore/JargonSheet";
 
-const TOPICS = ["Economy", "Housing", "Healthcare", "Tax Policy", "Immigration", "Energy"];
 const DEFAULT_ZIP = "20814";
+const ISSUES = [
+  "Economy", "Housing", "Healthcare", "Immigration", "Trade",
+  "Education", "Climate", "Technology", "Taxes", "Energy",
+];
 
 export default function ExploreScreen() {
   const router = useRouter();
-  const [query, setQuery] = useState("");
-  const [worldStories, setWorldStories] = useState<Story[]>([]);
-  const [searching, setSearching] = useState(false);
-  const [result, setResult] = useState<ExploreSearchResult | null>(null);
-  const [activeQuery, setActiveQuery] = useState<string | null>(null);
-  const [stateName, setStateName] = useState<string | null>(null);
-  const [topics, setTopics] = useState<string[]>([]);
-  const [bills, setBills] = useState<BillSearchResult | null>(null);
-
   const { width } = useWindowDimensions();
   const tight = width <= 380;
+  const gutter = tight ? 16 : 20;
 
+  const [query, setQuery] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [activeQuery, setActiveQuery] = useState<string | null>(null);
+  const [result, setResult] = useState<ExploreSearchResult | null>(null);
+  const [bills, setBills] = useState<BillSearchResult | null>(null);
+
+  const [stateName, setStateName] = useState<string | null>(null);
+  const [placeLabel, setPlaceLabel] = useState<string | null>(null);
+  const [topics, setTopics] = useState<string[]>([]);
+  const [worldStories, setWorldStories] = useState<Story[]>([]);
+  const [reps, setReps] = useState<Representative[]>([]);
+  const [activity, setActivity] = useState<GovActivityItem[]>([]);
+  const [activityLoading, setActivityLoading] = useState(true);
+
+  const [sheetTerm, setSheetTerm] = useState<JargonTerm | null>(null);
+  const [sheetContext, setSheetContext] = useState<string | null>(null);
+
+  // Sections resolve independently so one slow upstream can't blank the page.
   useEffect(() => {
-    getStoredZip().then((stored) => {
+    getStoredTopics().then(setTopics);
+    getStoredZip().then(async (stored) => {
       const zip = stored && stored.length === 5 ? stored : DEFAULT_ZIP;
       setStateName(stateForZip(zip));
+      getZipLocation(supabase, zip).then((p) =>
+        setPlaceLabel(p ? `${p.city}, ${p.stateAbbr}` : stateForZip(zip))
+      );
       getTodayStories(supabase, zip).then((all) =>
         setWorldStories(all.filter((s) => s.scope === "World"))
       );
+
+      const resolved = await getRepresentativesByZip(supabase, zip);
+      setReps(resolved);
+      setActivity(await getGovActivity(supabase, bioguideIdsFor(resolved)));
+      setActivityLoading(false);
     });
-    getStoredTopics().then(setTopics);
   }, []);
 
   const runSearch = async (q: string) => {
@@ -59,8 +91,6 @@ export default function ExploreScreen() {
     setActiveQuery(q);
     setResult(null);
     setBills(null);
-    // Two independent lanes: what we've covered, and what Congress has filed.
-    // Run together so a query with no coverage still returns the legislation.
     const [coverage, legislation] = await Promise.all([
       searchExplore(supabase, q, { state: stateName, topics }),
       searchBills(supabase, q),
@@ -77,60 +107,46 @@ export default function ExploreScreen() {
     setBills(null);
   };
 
-  // The reference shows a single fixed "Trade talks" headline; this uses the
-  // newest real World stories instead, and says so honestly when there are
-  // none. Capped at five so the module stays a digest, not a second feed.
-  const featured = worldStories.slice(0, 5);
+  const repFor = (bioguideId: string) => reps.find((r) => r.externalId === bioguideId) ?? null;
+  const federalReps = reps.filter((r) => r.level === "Federal");
+
+  // Anchored to a bill the reader is actually being shown, so the term is one
+  // they've just encountered rather than a lesson chosen for them.
+  const learningSource = activity.find((a) => detectTerm(a.latestAction));
+  const learningTerm = learningSource ? detectTerm(learningSource.latestAction) : null;
+  const learningContext = learningSource
+    ? `${learningSource.citation} — ${learningSource.latestAction}`
+    : null;
+
+  const openBill = (item: GovActivityItem) => Linking.openURL(item.url);
+  const searchResults = result?.found ? result.stories ?? [] : [];
 
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
-      <ScrollView contentContainerStyle={styles.scrollArea} keyboardShouldPersistTaps="handled">
-        <View style={[styles.header, tight && styles.gutterTight]}>
-          <Text style={styles.title}>Explore</Text>
-
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={{ paddingHorizontal: gutter }}>
+          <Text style={styles.title} accessibilityRole="header">Explore</Text>
           <View style={styles.searchField}>
-            <Search size={19} color="#8A929A" strokeWidth={1.75} />
+            <Search size={19} color="#7A848D" strokeWidth={1.9} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Search for a topic or bill"
-              placeholderTextColor="#8A929A"
+              placeholder="Search a bill, official, topic, or political term"
+              placeholderTextColor="#7A848D"
               value={query}
               onChangeText={setQuery}
               onSubmitEditing={() => runSearch(query)}
               returnKeyType="search"
-              accessibilityLabel="Search for a topic or bill"
+              accessibilityLabel="Search a bill, official, topic, or political term"
             />
           </View>
         </View>
 
-        <View style={[styles.divider, tight && styles.dividerTight]} />
-
-        <View style={[styles.section, styles.topicsSection, tight && styles.gutterTight]}>
-          <Text style={styles.sectionHeading}>Top topics</Text>
-          <View style={[styles.topicGrid, tight && styles.topicGridTight]}>
-            {TOPICS.map((t) => (
-              <Pressable
-                key={t}
-                onPress={() => {
-                  setQuery(t);
-                  runSearch(t);
-                }}
-                accessibilityRole="button"
-                accessibilityLabel={t}
-                style={({ pressed }) => [
-                  styles.topicChip,
-                  tight && styles.topicChipTight,
-                  pressed && styles.topicChipPressed,
-                ]}
-              >
-                <Text style={[styles.topicChipText, tight && styles.topicChipTextTight]}>{t}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-
-        {(searching || result) && (
-          <View style={[styles.section, tight && styles.gutterTight, { marginTop: 22 }]}>
+        {(searching || result || bills) && (
+          <View style={[styles.searchResults, { paddingHorizontal: gutter }]}>
             <View style={styles.resultCard}>
               <View style={styles.resultHeader}>
                 <Sparkles size={14} color={color.brand.deepTeal} />
@@ -141,7 +157,6 @@ export default function ExploreScreen() {
                   <Text style={styles.clearText}>Clear</Text>
                 </Pressable>
               </View>
-
               {searching ? (
                 <ActivityIndicator color={color.brand.deepTeal} style={{ marginVertical: 16 }} />
               ) : result?.found ? (
@@ -153,12 +168,10 @@ export default function ExploreScreen() {
               )}
             </View>
 
-            {/* The answer is built from real stories, so they're listed and
-                openable rather than leaving the reader at the prose. */}
-            {!searching && result?.found && result.stories && result.stories.length > 0 ? (
+            {searchResults.length > 0 ? (
               <View style={styles.hits}>
                 <Text style={styles.hitsHeading}>In your feed</Text>
-                {result.stories.map((s) => (
+                {searchResults.map((s) => (
                   <Pressable
                     key={s.id}
                     onPress={() => router.push(`/story/${s.id}`)}
@@ -167,12 +180,8 @@ export default function ExploreScreen() {
                     style={styles.hit}
                   >
                     <View style={{ flex: 1, minWidth: 0 }}>
-                      <Text style={styles.hitScope}>
-                        {s.scope.toUpperCase()} · {s.topic}
-                      </Text>
-                      <Text style={styles.hitHeadline} numberOfLines={2}>
-                        {s.headline}
-                      </Text>
+                      <Text style={styles.hitScope}>{s.scope.toUpperCase()} · {s.topic}</Text>
+                      <Text style={styles.hitHeadline} numberOfLines={2}>{s.headline}</Text>
                     </View>
                     <ChevronRight size={18} color="#5D6670" strokeWidth={1.9} />
                   </Pressable>
@@ -180,9 +189,6 @@ export default function ExploreScreen() {
               </View>
             ) : null}
 
-            {/* Federal legislation straight from the official record. Shown
-                even when we have no story about it — the bill exists whether
-                or not we've covered it. */}
             {!searching && bills && bills.bills.length > 0 ? (
               <View style={styles.hits}>
                 <Text style={styles.hitsHeading}>Bills in Congress</Text>
@@ -195,115 +201,189 @@ export default function ExploreScreen() {
                     style={styles.hit}
                   >
                     <View style={{ flex: 1, minWidth: 0 }}>
-                      <Text style={styles.hitScope}>
-                        {b.citation} · {b.congress}TH CONGRESS
-                      </Text>
-                      <Text style={styles.hitHeadline} numberOfLines={2}>
-                        {b.title}
-                      </Text>
-                      {b.latestAction ? (
-                        <Text style={styles.billAction} numberOfLines={2}>
-                          {b.latestActionDate ? `${b.latestActionDate} — ` : ""}
-                          {b.latestAction}
-                        </Text>
-                      ) : null}
+                      <Text style={styles.hitScope}>{b.citation} · {b.congress}TH CONGRESS</Text>
+                      <Text style={styles.hitHeadline} numberOfLines={2}>{b.title}</Text>
                     </View>
                     <ExternalLink size={17} color="#5D6670" strokeWidth={1.9} />
                   </Pressable>
                 ))}
-                <Text style={styles.billsFootnote}>Source: congress.gov</Text>
+                <Text style={styles.footnote}>Source: congress.gov</Text>
               </View>
             ) : null}
           </View>
         )}
 
-        <View style={[styles.section, styles.worldSection, tight && styles.gutterTight]}>
-          <Text style={styles.sectionHeading}>Around the world</Text>
+        <View style={styles.section}>
+          <SectionHeader
+            title="In your government"
+            subtitle="Recent legislation and activity connected to your representatives."
+            gutter={gutter}
+          />
+          {activityLoading ? (
+            <ActivityIndicator style={{ marginVertical: 24 }} color={color.brand.deepTeal} />
+          ) : activity.length === 0 ? (
+            <View style={{ paddingHorizontal: gutter }}>
+              <Text style={styles.emptyText}>
+                No recent activity from your representatives. Explore current legislation instead.
+              </Text>
+            </View>
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={[styles.strip, { paddingHorizontal: gutter }]}
+            >
+              {activity.slice(0, 8).map((item, i) => {
+                const rep = repFor(item.bioguideId);
+                return (
+                  <GovernmentActivityCard
+                    key={`${item.citation}-${i}`}
+                    item={item}
+                    repName={rep?.name ?? null}
+                    repPhoto={rep?.photoUrl ?? null}
+                    onPress={() => openBill(item)}
+                  />
+                );
+              })}
+            </ScrollView>
+          )}
+        </View>
 
-          <View style={styles.worldModule}>
-            <Image
-              source={require("@/assets/explore/world-map.jpg")}
-              style={[styles.worldMap, tight && styles.worldMapTight]}
-              resizeMode="cover"
-              accessibilityLabel="World map highlighting current international stories"
+        {learningTerm && learningContext ? (
+          <View style={styles.section}>
+            <SectionHeader title="Learn from what's happening" gutter={gutter} />
+            <ContextLearningCard
+              term={learningTerm}
+              contextSentence={learningContext}
+              gutter={gutter}
+              onPress={() => {
+                setSheetTerm(learningTerm);
+                setSheetContext(learningContext);
+              }}
             />
+          </View>
+        ) : null}
 
-            {featured.length === 0 ? (
-              <View style={styles.worldStoryContent}>
-                <Text style={styles.emptyWorldText}>No world coverage available right now.</Text>
-              </View>
-            ) : (
-              featured.map((story, i) => (
-                <Pressable
-                  key={story.id}
-                  onPress={() => router.push(`/story/${story.id}`)}
-                  accessibilityRole="link"
-                  accessibilityLabel={story.headline}
-                  style={styles.worldStoryContent}
-                >
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text style={styles.worldMetadata}>
-                      {story.scope.toUpperCase()} · {estimateReadMinutes(story)} MIN READ
-                    </Text>
-                    <Text style={styles.worldHeadline} numberOfLines={2}>
-                      {story.headline}
-                    </Text>
-                  </View>
-                  <ChevronRight size={21} color="#5D6670" strokeWidth={1.8} />
-                  {i < featured.length - 1 ? <View style={styles.worldDivider} /> : null}
-                </Pressable>
-              ))
-            )}
+        {federalReps.length > 0 ? (
+          <View style={styles.section}>
+            <SectionHeader title="Your officials in action" gutter={gutter} />
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={[styles.strip, { paddingHorizontal: gutter }]}
+            >
+              {federalReps.map((rep) => (
+                <OfficialActivityCard
+                  key={rep.id}
+                  name={rep.name}
+                  office={
+                    rep.role === "US Senator"
+                      ? "U.S. Senate"
+                      : `U.S. House${rep.district ? ` · ${rep.district}` : ""}`
+                  }
+                  photoUrl={rep.photoUrl}
+                  items={activity.filter((a) => a.bioguideId === rep.externalId)}
+                  onPressItem={openBill}
+                />
+              ))}
+            </ScrollView>
+          </View>
+        ) : null}
+
+        <View style={styles.section}>
+          <SectionHeader title="Explore an issue" gutter={gutter} />
+          <View style={[styles.issueGrid, { paddingHorizontal: gutter }]}>
+            {ISSUES.map((issue) => (
+              <IssueChip
+                key={issue}
+                label={issue}
+                onPress={() => {
+                  setQuery(issue);
+                  runSearch(issue);
+                }}
+              />
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <ElectionCenterCard placeLabel={placeLabel} gutter={gutter} />
+        </View>
+
+        <View style={styles.section}>
+          <SectionHeader title="Around the world" gutter={gutter} />
+          <View style={{ paddingHorizontal: gutter }}>
+            <View style={styles.worldModule}>
+              <Image
+                source={require("@/assets/explore/world-map.jpg")}
+                style={[styles.worldMap, tight && styles.worldMapTight]}
+                resizeMode="cover"
+                accessibilityLabel="World map highlighting current international stories"
+              />
+              {worldStories.length === 0 ? (
+                <View style={styles.worldRow}>
+                  <Text style={styles.emptyText}>No world coverage available right now.</Text>
+                </View>
+              ) : (
+                worldStories.slice(0, 5).map((story, i) => (
+                  <Pressable
+                    key={story.id}
+                    onPress={() => router.push(`/story/${story.id}`)}
+                    accessibilityRole="link"
+                    accessibilityLabel={story.headline}
+                    style={styles.worldRow}
+                  >
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={styles.worldMeta}>
+                        {story.scope.toUpperCase()} · {estimateReadMinutes(story)} MIN READ
+                      </Text>
+                      <Text style={styles.worldHeadline} numberOfLines={2}>{story.headline}</Text>
+                    </View>
+                    <ChevronRight size={20} color="#5D6670" strokeWidth={1.9} />
+                    {i < Math.min(worldStories.length, 5) - 1 ? <View style={styles.worldDivider} /> : null}
+                  </Pressable>
+                ))
+              )}
+            </View>
           </View>
         </View>
       </ScrollView>
+
+      <JargonSheet
+        term={sheetTerm}
+        contextSentence={sheetContext}
+        stage={stageFromAction(learningSource?.latestAction)}
+        onClose={() => setSheetTerm(null)}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: color.light.canvas },
-  // Clears the fixed tab bar so the world module is never stranded behind it.
-  scrollArea: { paddingBottom: 96 },
-  gutterTight: { paddingHorizontal: 20 },
+  scroll: { paddingTop: 20, paddingBottom: 110 },
 
-  header: { paddingHorizontal: 24, paddingTop: 20 },
-  title: { fontSize: 28, lineHeight: 34, fontWeight: "700", letterSpacing: -0.5, color: "#101418" },
-
+  title: { fontSize: 30, lineHeight: 36, fontWeight: "700", letterSpacing: -0.5, color: "#101418" },
   searchField: {
-    marginTop: 18,
+    marginTop: 16,
     height: 46,
     paddingHorizontal: 14,
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    columnGap: 10,
     borderRadius: 12,
-    backgroundColor: "#EEE9DE",
+    borderWidth: 1,
+    borderColor: "#DDE1E5",
+    backgroundColor: "#FFFFFF",
   },
   searchInput: { flex: 1, minWidth: 0, fontSize: 14, lineHeight: 20, fontWeight: "400", color: "#101418" },
 
-  divider: { height: 1, marginTop: 19, marginHorizontal: 24, backgroundColor: "#E3E0D8" },
-  dividerTight: { marginHorizontal: 20 },
+  section: { marginTop: 26 },
+  strip: { columnGap: 12 },
+  issueGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  emptyText: { fontSize: 13.5, lineHeight: 19, color: "#5D6670" },
 
-  section: { paddingHorizontal: 24 },
-  sectionHeading: { fontSize: 20, lineHeight: 26, fontWeight: "700", letterSpacing: -0.25, color: "#101418" },
-
-  topicsSection: { marginTop: 22 },
-  topicGrid: { marginTop: 15, flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  topicGridTight: { gap: 8 },
-  topicChip: {
-    height: 40,
-    paddingHorizontal: 15,
-    borderRadius: 999,
-    backgroundColor: "#EEE9DE",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  topicChipTight: { paddingHorizontal: 13 },
-  topicChipPressed: { backgroundColor: color.brand.softTeal },
-  topicChipText: { fontSize: 14, lineHeight: 18, fontWeight: "600", color: "#252B30" },
-  topicChipTextTight: { fontSize: 13 },
-
+  searchResults: { marginTop: 20 },
   resultCard: { backgroundColor: color.brand.warmSand, borderRadius: 14, padding: 16 },
   resultHeader: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 },
   resultHeaderText: { flex: 1, fontSize: 11, fontWeight: "700", color: color.brand.deepTeal, textTransform: "uppercase", letterSpacing: 0.3 },
@@ -326,32 +406,13 @@ const styles = StyleSheet.create({
   },
   hitScope: { fontSize: 10.5, lineHeight: 14, fontWeight: "700", letterSpacing: 0.3, color: "#5D6670" },
   hitHeadline: { marginTop: 2, fontSize: 14.5, lineHeight: 19, fontWeight: "700", letterSpacing: -0.1, color: "#101418" },
-  billAction: { marginTop: 4, fontSize: 12, lineHeight: 16, fontWeight: "400", color: "#5D6670" },
-  billsFootnote: { marginTop: 8, fontSize: 11.5, lineHeight: 16, color: "#8A929A" },
+  footnote: { marginTop: 8, fontSize: 11.5, lineHeight: 16, color: "#8A929A" },
 
-  worldSection: { marginTop: 36 },
-  // Map and story share one bordered container so they read as a single module.
-  worldModule: {
-    marginTop: 15,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "#DDE1E5",
-    borderRadius: 14,
-    backgroundColor: "#FFFFFF",
-  },
-  worldMap: { width: "100%", height: 218, backgroundColor: "#F2EFE7" },
-  worldMapTight: { height: 204 },
+  worldModule: { overflow: "hidden", borderWidth: 1, borderColor: "#DDE1E5", borderRadius: 14, backgroundColor: "#FFFFFF" },
+  worldMap: { width: "100%", height: 150, backgroundColor: "#F2EFE7" },
+  worldMapTight: { height: 138 },
+  worldRow: { minHeight: 84, paddingVertical: 13, paddingHorizontal: 15, flexDirection: "row", alignItems: "center", columnGap: 12 },
   worldDivider: { position: "absolute", left: 15, right: 0, bottom: 0, height: 1, backgroundColor: "#E7E9EC" },
-  worldStoryContent: {
-    minHeight: 88,
-    paddingVertical: 14,
-    paddingHorizontal: 15,
-    flexDirection: "row",
-    alignItems: "center",
-    columnGap: 12,
-    backgroundColor: "#FFFFFF",
-  },
-  worldMetadata: { fontSize: 11, lineHeight: 15, fontWeight: "600", letterSpacing: 0.3, color: "#5D6670" },
-  worldHeadline: { marginTop: 8, fontSize: 17, lineHeight: 23, fontWeight: "700", letterSpacing: -0.15, color: "#101418" },
-  emptyWorldText: { flex: 1, fontSize: 14, lineHeight: 20, color: "#5D6670" },
+  worldMeta: { fontSize: 10.5, lineHeight: 14, fontWeight: "700", letterSpacing: 0.3, color: "#5D6670" },
+  worldHeadline: { marginTop: 3, fontSize: 15, lineHeight: 20, fontWeight: "700", letterSpacing: -0.15, color: "#101418" },
 });

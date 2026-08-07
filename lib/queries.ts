@@ -141,6 +141,7 @@ export async function getZipLocation(
 
 interface RepRow {
   id: string;
+  external_id: string | null;
   level: RepLevel;
   role: string;
   controls: string;
@@ -190,7 +191,7 @@ async function fetchCoverage(
 ): Promise<{ reps: Representative[]; stale: boolean }> {
   const { data, error } = await supabase
     .from("rep_zip_coverage")
-    .select("source_version, representatives ( id, level, role, controls, name, jurisdiction_confidence, district, photo_url, phone, website )")
+    .select("source_version, representatives ( id, external_id, level, role, controls, name, jurisdiction_confidence, district, photo_url, phone, website )")
     .eq("zip", zip);
 
   if (error) {
@@ -208,6 +209,7 @@ function mapReps(rows: { representatives: RepRow }[]): Representative[] {
   return rows
     .map((row) => ({
       id: row.representatives.id,
+      externalId: row.representatives.external_id,
       level: row.representatives.level,
       role: row.representatives.role,
       controls: row.representatives.controls,

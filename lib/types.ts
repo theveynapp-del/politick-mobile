@@ -46,6 +46,8 @@ export type RepLevel = "Local" | "County" | "State" | "Federal";
 
 export interface Representative {
   id: string;
+  /** Source identifier. For members of Congress this is the bioguide ID. */
+  externalId: string | null;
   level: RepLevel;
   role: string;
   controls: string;
