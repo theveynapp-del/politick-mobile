@@ -1,166 +1,451 @@
-import { useEffect, useState } from "react";
-import { View, TextInput, Pressable, StyleSheet, Switch, ScrollView, Keyboard } from "react-native";
+import { useEffect, useState, useCallback } from "react";
+import {
+  View,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Modal,
+  TextInput,
+  useWindowDimensions,
+} from "react-native";
 import { Text } from "@/components/Text";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import { Settings, ChevronRight } from "lucide-react-native";
-import { color, radius } from "@/lib/tokens";
+import { useFocusEffect, useRouter } from "expo-router";
+import {
+  Settings,
+  ChevronRight,
+  MapPin,
+  Bell,
+  Clock,
+  Sun,
+  Bookmark,
+  History,
+  Download,
+} from "lucide-react-native";
+import { supabase } from "@/lib/supabase";
+import { getZipLocation } from "@/lib/queries";
+import { getSavedIds } from "@/lib/savedStories";
 import {
   getStoredZip,
   setStoredZip,
-  getStoredTopics,
+  getStoredName,
+  setStoredName,
+  getStoredEmail,
+  setStoredEmail,
   getNotificationsEnabled,
   setNotificationsEnabled,
-  setOnboardingComplete,
 } from "@/lib/onboarding";
 
+const DEFAULT_ZIP = "20814";
+
 /**
- * "You" / Profile — matches the reference board's Deep Teal header +
- * grouped white settings cards, while staying real (not decorative):
- * ZIP and notifications actually persist and feed Today/My Reps.
+ * Profile. The dark header carries identity, the white sheet carries settings.
+ *
+ * Rows are only interactive where something real is behind them. Daily
+ * briefing time, display mode and the two history rows are drawn but marked
+ * "Soon" — there is no scheduler, no theme switching and no reading or
+ * download history in the app yet, and a chevron that goes nowhere is worse
+ * than an honest label.
  */
 export default function YouScreen() {
   const router = useRouter();
-  const [zip, setZip] = useState("");
-  const [editingZip, setEditingZip] = useState(false);
-  const [topics, setTopics] = useState<string[]>([]);
-  const [notifEnabled, setNotifEnabled] = useState(true);
+  const { width } = useWindowDimensions();
+  const gutter = width <= 380 ? 16 : 20;
 
-  useEffect(() => {
-    Promise.all([getStoredZip(), getStoredTopics(), getNotificationsEnabled()]).then(
-      ([storedZip, storedTopics, storedNotif]) => {
-        setZip(storedZip ?? "20814");
-        setTopics(storedTopics);
-        setNotifEnabled(storedNotif);
-      }
-    );
+  const [name, setName] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
+  const [zip, setZip] = useState(DEFAULT_ZIP);
+  const [placeLabel, setPlaceLabel] = useState<string | null>(null);
+  const [notif, setNotif] = useState(true);
+  const [savedCount, setSavedCount] = useState(0);
+
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [editingZip, setEditingZip] = useState(false);
+  const [draftName, setDraftName] = useState("");
+  const [draftEmail, setDraftEmail] = useState("");
+  const [draftZip, setDraftZip] = useState("");
+
+  const loadZipPlace = useCallback(async (z: string) => {
+    const place = await getZipLocation(supabase, z);
+    setPlaceLabel(place ? `${place.city}, ${place.stateAbbr}` : null);
   }, []);
 
-  const saveZip = async () => {
-    if (zip.length !== 5) return;
-    Keyboard.dismiss();
-    await setStoredZip(zip);
-    setEditingZip(false);
-  };
+  useEffect(() => {
+    getStoredName().then(setName);
+    getStoredEmail().then(setEmail);
+    getNotificationsEnabled().then(setNotif);
+    getStoredZip().then((stored) => {
+      const z = stored && stored.length === 5 ? stored : DEFAULT_ZIP;
+      setZip(z);
+      loadZipPlace(z);
+    });
+  }, [loadZipPlace]);
 
-  const toggleNotif = async (value: boolean) => {
-    setNotifEnabled(value);
-    await setNotificationsEnabled(value);
-  };
+  // Saved count changes on other screens, so re-read whenever this one is shown.
+  useFocusEffect(
+    useCallback(() => {
+      getSavedIds().then((ids) => setSavedCount(ids.length));
+    }, [])
+  );
 
-  const redoOnboarding = async () => {
-    await setOnboardingComplete(false);
-    router.replace("/onboarding");
+  const openProfileEditor = () => {
+    setDraftName(name ?? "");
+    setDraftEmail(email ?? "");
+    setEditingProfile(true);
   };
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      <View style={styles.heroHeader}>
-        <View>
-          <Text style={styles.heroName}>Your account</Text>
-          <Text style={styles.heroEmail}>Not signed in yet</Text>
-        </View>
-        <Settings size={20} color="#fff" />
-      </View>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <View style={[styles.hero, { paddingHorizontal: gutter }]}>
+          <Pressable
+            onPress={openProfileEditor}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel="Edit your name and email"
+            style={styles.gear}
+          >
+            <Settings size={22} color="#FFFFFF" strokeWidth={1.9} />
+          </Pressable>
 
-      <ScrollView contentContainerStyle={{ padding: 20 }}>
-        <Text style={styles.sectionLabel}>Your settings</Text>
-        <View style={styles.group}>
-          {editingZip ? (
-            <View style={styles.editZipRow}>
-              <TextInput
-                style={styles.zipInput}
-                value={zip}
-                onChangeText={(v) => {
-                  const digits = v.replace(/[^0-9]/g, "").slice(0, 5);
-                  setZip(digits);
-                  if (digits.length === 5) Keyboard.dismiss();
-                }}
-                keyboardType="number-pad"
-                maxLength={5}
-                autoFocus
-                returnKeyType="done"
-                onSubmitEditing={Keyboard.dismiss}
-              />
-              <Pressable onPress={saveZip} style={styles.saveBtn}>
-                <Text style={styles.saveBtnText}>Save</Text>
-              </Pressable>
-            </View>
-          ) : (
-            <Pressable style={styles.row} onPress={() => setEditingZip(true)}>
-              <Text style={styles.rowLabel}>Edit ZIP Code</Text>
-              <Text style={styles.rowValue}>{zip}</Text>
-            </Pressable>
-          )}
-          <View style={styles.divider} />
-          <View style={styles.row}>
-            <Text style={styles.rowLabel}>Notification Preferences</Text>
-            <Switch value={notifEnabled} onValueChange={toggleNotif} trackColor={{ true: color.brand.civicTeal, false: color.light.border }} />
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.row}>
-            <Text style={styles.rowLabel}>Daily Briefing Time</Text>
-            <Text style={styles.rowValue}>7:30 AM</Text>
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.row}>
-            <Text style={styles.rowLabel}>Display</Text>
-            <Text style={styles.rowValue}>Light Mode</Text>
-          </View>
+          <Pressable onPress={openProfileEditor} accessibilityRole="button" accessibilityLabel="Edit your profile">
+            <Text style={[styles.heroName, !name && styles.heroNamePlaceholder]}>
+              {name ?? "Add your name"}
+            </Text>
+            <Text style={styles.heroSub}>
+              {email ?? (name ? "Add your email" : "Personalises your Today greeting")}
+            </Text>
+          </Pressable>
         </View>
 
-        {topics.length > 0 && (
-          <>
-            <Text style={styles.sectionLabel}>Your topics</Text>
-            <View style={styles.chipsWrap}>
-              {topics.map((t) => (
-                <View key={t} style={styles.chip}>
-                  <Text style={styles.chipText}>{t}</Text>
-                </View>
-              ))}
-            </View>
-          </>
-        )}
+        <View style={[styles.sheet, { paddingHorizontal: gutter }]}>
+          <Text style={styles.sectionTitle} accessibilityRole="header">
+            Your settings
+          </Text>
+          <View style={styles.group}>
+            <Row
+              icon={MapPin}
+              label="Edit ZIP Code"
+              value={zip}
+              hint={placeLabel}
+              onPress={() => {
+                setDraftZip(zip);
+                setEditingZip(true);
+              }}
+            />
+            <Divider />
+            <Row
+              icon={Bell}
+              label="Notification Preferences"
+              control={
+                <Switch
+                  value={notif}
+                  onValueChange={(v) => {
+                    setNotif(v);
+                    setNotificationsEnabled(v);
+                  }}
+                  trackColor={{ true: "#0D5F5B", false: "#D3D7DB" }}
+                  thumbColor="#FFFFFF"
+                  accessibilityLabel="Notifications"
+                />
+              }
+            />
+            <Divider />
+            <Row icon={Clock} label="Daily Briefing Time" soon />
+            <Divider />
+            <Row icon={Sun} label="Display" value="Light Mode" soon />
+          </View>
 
-        <Text style={styles.sectionLabel}>Your activity</Text>
-        <View style={styles.group}>
-          {["Saved Stories", "Reading History", "Download History"].map((label, i, arr) => (
-            <View key={label}>
-              <View style={styles.row}>
-                <Text style={styles.rowLabel}>{label}</Text>
-                <ChevronRight size={16} color={color.light.muted} />
-              </View>
-              {i < arr.length - 1 && <View style={styles.divider} />}
-            </View>
-          ))}
+          <Text style={[styles.sectionTitle, { marginTop: 26 }]} accessibilityRole="header">
+            Your activity
+          </Text>
+          <View style={styles.group}>
+            <Row
+              icon={Bookmark}
+              label="Saved Stories"
+              value={savedCount > 0 ? String(savedCount) : undefined}
+              onPress={() => router.push("/saved")}
+            />
+            <Divider />
+            <Row icon={History} label="Reading History" soon />
+            <Divider />
+            <Row icon={Download} label="Download History" soon />
+          </View>
         </View>
-
-        <Pressable onPress={redoOnboarding} style={styles.redoBtn}>
-          <Text style={styles.redoBtnText}>Redo location &amp; topics setup</Text>
-        </Pressable>
       </ScrollView>
+
+      <EditProfileModal
+        visible={editingProfile}
+        name={draftName}
+        email={draftEmail}
+        onChangeName={setDraftName}
+        onChangeEmail={setDraftEmail}
+        onCancel={() => setEditingProfile(false)}
+        onSave={async () => {
+          const n = draftName.trim();
+          const e = draftEmail.trim();
+          await setStoredName(n);
+          await setStoredEmail(e);
+          setName(n || null);
+          setEmail(e || null);
+          setEditingProfile(false);
+        }}
+      />
+
+      <EditZipModal
+        visible={editingZip}
+        value={draftZip}
+        onChange={setDraftZip}
+        onCancel={() => setEditingZip(false)}
+        onSave={async () => {
+          const next = draftZip.trim();
+          if (next.length !== 5) return;
+          await setStoredZip(next);
+          setZip(next);
+          setEditingZip(false);
+          loadZipPlace(next);
+        }}
+      />
     </SafeAreaView>
   );
 }
 
+function Divider() {
+  return <View style={styles.divider} />;
+}
+
+function Row({
+  icon: Icon,
+  label,
+  value,
+  hint,
+  control,
+  soon,
+  onPress,
+}: {
+  icon: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
+  label: string;
+  value?: string;
+  hint?: string | null;
+  control?: React.ReactNode;
+  soon?: boolean;
+  onPress?: () => void;
+}) {
+  const body = (
+    <>
+      <Icon size={20} color={soon ? "#9BA3AA" : "#41484F"} strokeWidth={1.9} />
+      <View style={styles.rowText}>
+        <Text style={[styles.rowLabel, soon && styles.rowLabelSoon]} numberOfLines={1}>
+          {label}
+        </Text>
+        {hint ? (
+          <Text style={styles.rowHint} numberOfLines={1}>
+            {hint}
+          </Text>
+        ) : null}
+      </View>
+
+      {value ? <Text style={[styles.rowValue, soon && styles.rowLabelSoon]}>{value}</Text> : null}
+      {soon ? (
+        <View style={styles.soonPill}>
+          <Text style={styles.soonText}>Soon</Text>
+        </View>
+      ) : control ? (
+        control
+      ) : onPress ? (
+        <ChevronRight size={20} color="#5D6670" strokeWidth={1.9} />
+      ) : null}
+    </>
+  );
+
+  if (!onPress) return <View style={styles.row}>{body}</View>;
+
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={styles.row}>
+      {body}
+    </Pressable>
+  );
+}
+
+function EditProfileModal({
+  visible,
+  name,
+  email,
+  onChangeName,
+  onChangeEmail,
+  onCancel,
+  onSave,
+}: {
+  visible: boolean;
+  name: string;
+  email: string;
+  onChangeName: (v: string) => void;
+  onChangeEmail: (v: string) => void;
+  onCancel: () => void;
+  onSave: () => void;
+}) {
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
+      <Pressable style={styles.scrim} onPress={onCancel}>
+        <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
+          <Text style={styles.modalTitle}>Your profile</Text>
+          <Text style={styles.modalBody}>
+            Your name personalises the greeting on Today. Both are stored on this device only.
+          </Text>
+
+          <Text style={styles.fieldLabel}>Name</Text>
+          <TextInput
+            value={name}
+            onChangeText={onChangeName}
+            placeholder="First name"
+            placeholderTextColor="#8A929A"
+            autoCapitalize="words"
+            autoFocus
+            accessibilityLabel="Name"
+            style={styles.input}
+          />
+
+          <Text style={styles.fieldLabel}>Email (optional)</Text>
+          <TextInput
+            value={email}
+            onChangeText={onChangeEmail}
+            placeholder="you@example.com"
+            placeholderTextColor="#8A929A"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            accessibilityLabel="Email"
+            style={styles.input}
+          />
+
+          <View style={styles.modalActions}>
+            <Pressable onPress={onCancel} accessibilityRole="button" style={styles.modalCancel}>
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </Pressable>
+            <Pressable onPress={onSave} accessibilityRole="button" style={styles.modalSave}>
+              <Text style={styles.modalSaveText}>Save</Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+function EditZipModal({
+  visible,
+  value,
+  onChange,
+  onCancel,
+  onSave,
+}: {
+  visible: boolean;
+  value: string;
+  onChange: (v: string) => void;
+  onCancel: () => void;
+  onSave: () => void;
+}) {
+  const valid = value.trim().length === 5;
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
+      <Pressable style={styles.scrim} onPress={onCancel}>
+        <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
+          <Text style={styles.modalTitle}>Edit ZIP code</Text>
+          <Text style={styles.modalBody}>
+            Your ZIP decides which stories and representatives you see.
+          </Text>
+          <TextInput
+            value={value}
+            onChangeText={(v) => onChange(v.replace(/[^0-9]/g, "").slice(0, 5))}
+            keyboardType="number-pad"
+            maxLength={5}
+            autoFocus
+            placeholder="ZIP code"
+            placeholderTextColor="#8A929A"
+            accessibilityLabel="ZIP code"
+            style={[styles.input, { marginTop: 14 }]}
+          />
+          <View style={styles.modalActions}>
+            <Pressable onPress={onCancel} accessibilityRole="button" style={styles.modalCancel}>
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </Pressable>
+            <Pressable
+              onPress={onSave}
+              disabled={!valid}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: !valid }}
+              style={[styles.modalSave, !valid && styles.modalSaveDisabled]}
+            >
+              <Text style={styles.modalSaveText}>Save</Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: color.light.canvas },
-  heroHeader: { backgroundColor: color.brand.deepTeal, padding: 22, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  heroName: { fontSize: 19, fontWeight: "700", color: "#fff" },
-  heroEmail: { fontSize: 11.5, color: "rgba(255,255,255,0.75)", marginTop: 2 },
-  sectionLabel: { fontSize: 11, fontWeight: "700", color: color.light.muted, marginTop: 20, marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.4 },
-  group: { backgroundColor: color.light.surface, borderWidth: 1, borderColor: color.light.border, borderRadius: radius.card, paddingHorizontal: 16 },
-  row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 14 },
-  rowLabel: { fontSize: 14, fontWeight: "600", color: color.light.ink },
-  rowValue: { fontSize: 13, color: color.light.muted },
-  divider: { height: 1, backgroundColor: color.light.border },
-  editZipRow: { flexDirection: "row", gap: 10, paddingVertical: 10, alignItems: "center" },
-  zipInput: { flex: 1, height: 40, borderRadius: 8, borderWidth: 1, borderColor: color.light.border, paddingHorizontal: 10, fontSize: 14, color: color.light.ink },
-  saveBtn: { paddingHorizontal: 14, height: 40, justifyContent: "center", backgroundColor: color.brand.deepTeal, borderRadius: 8 },
-  saveBtnText: { color: "#fff", fontWeight: "700", fontSize: 12.5 },
-  chipsWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  chip: { backgroundColor: color.brand.softTeal, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
-  chipText: { fontSize: 12.5, fontWeight: "600", color: color.brand.deepTeal },
-  redoBtn: { alignItems: "center", paddingVertical: 20 },
-  redoBtnText: { color: color.brand.deepTeal, fontWeight: "700", fontSize: 13.5 },
+  safe: { flex: 1, backgroundColor: "#12302E" },
+  scroll: { paddingBottom: 100, backgroundColor: "#F7F6F2" },
+
+  // A darkened Deep Teal, so the panel reads as brand rather than plain black.
+  hero: { paddingTop: 18, paddingBottom: 34, backgroundColor: "#12302E" },
+  gear: { alignSelf: "flex-end", width: 44, height: 44, alignItems: "flex-end", justifyContent: "center" },
+  heroName: { fontSize: 26, lineHeight: 32, fontWeight: "700", letterSpacing: -0.4, color: "#FFFFFF" },
+  heroNamePlaceholder: { color: "rgba(255,255,255,0.75)" },
+  heroSub: { marginTop: 4, fontSize: 14, lineHeight: 20, fontWeight: "400", color: "rgba(255,255,255,0.7)" },
+
+  // Pulled up over the header so the sheet reads as sitting on top of it.
+  sheet: {
+    marginTop: -20,
+    paddingTop: 22,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    backgroundColor: "#F7F6F2",
+    minHeight: 600,
+  },
+  sectionTitle: { fontSize: 17, lineHeight: 23, fontWeight: "700", letterSpacing: -0.2, color: "#101418" },
+
+  group: {
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: "#DDE1E5",
+    borderRadius: 16,
+    backgroundColor: "#FFFFFF",
+    overflow: "hidden",
+  },
+  row: { minHeight: 56, paddingVertical: 12, paddingHorizontal: 14, flexDirection: "row", alignItems: "center", columnGap: 12 },
+  rowText: { flex: 1, minWidth: 0 },
+  rowLabel: { fontSize: 15, lineHeight: 20, fontWeight: "500", color: "#101418" },
+  rowLabelSoon: { color: "#9BA3AA" },
+  rowHint: { marginTop: 1, fontSize: 12.5, lineHeight: 17, color: "#5D6670" },
+  rowValue: { fontSize: 14.5, lineHeight: 20, fontWeight: "400", color: "#5D6670" },
+  divider: { height: 1, marginLeft: 46, backgroundColor: "#E7E9EC" },
+
+  soonPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, backgroundColor: "#EEE9DE" },
+  soonText: { fontSize: 11, lineHeight: 15, fontWeight: "700", color: "#8A7A55" },
+
+  scrim: { flex: 1, backgroundColor: "rgba(16,20,24,0.4)", alignItems: "center", justifyContent: "center", padding: 24 },
+  modalCard: { width: "100%", maxWidth: 340, padding: 20, borderRadius: 18, backgroundColor: "#FFFFFF" },
+  modalTitle: { fontSize: 18, lineHeight: 24, fontWeight: "700", color: "#101418" },
+  modalBody: { marginTop: 6, fontSize: 13.5, lineHeight: 19, color: "#5D6670" },
+  fieldLabel: { marginTop: 14, fontSize: 12.5, lineHeight: 17, fontWeight: "600", color: "#41484F" },
+  input: {
+    marginTop: 6,
+    height: 48,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#DDE1E5",
+    backgroundColor: "#F7F6F2",
+    fontSize: 16,
+    color: "#101418",
+  },
+  modalActions: { marginTop: 18, flexDirection: "row", justifyContent: "flex-end", columnGap: 8 },
+  modalCancel: { height: 44, paddingHorizontal: 16, alignItems: "center", justifyContent: "center" },
+  modalCancelText: { fontSize: 14, fontWeight: "600", color: "#5D6670" },
+  modalSave: { height: 44, paddingHorizontal: 20, alignItems: "center", justifyContent: "center", borderRadius: 12, backgroundColor: "#0D5F5B" },
+  modalSaveDisabled: { opacity: 0.4 },
+  modalSaveText: { fontSize: 14, fontWeight: "700", color: "#FFFFFF" },
 });
