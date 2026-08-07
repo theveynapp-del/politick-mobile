@@ -68,9 +68,17 @@ export default function RepsScreen() {
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={[styles.header, { paddingHorizontal: gutter }]}>
-          <Text style={styles.title} accessibilityRole="header">
-            Your representatives
-          </Text>
+          <View style={styles.titleRow}>
+            <Image
+              source={require("@/assets/politick-emblem.png")}
+              style={styles.emblem}
+              resizeMode="contain"
+              accessibilityLabel=""
+            />
+            <Text style={styles.title} accessibilityRole="header">
+              Your representatives
+            </Text>
+          </View>
           <View style={styles.locationRow}>
             <Text style={styles.location} numberOfLines={1}>
               {locationLine}
@@ -305,6 +313,11 @@ const styles = StyleSheet.create({
   scroll: { paddingBottom: 100 },
 
   header: { paddingTop: 20 },
+  // Brand mark inline with the title, so it costs no vertical space — the
+  // screen title keeps doing the wayfinding and the emblem just makes sure
+  // Politick is present if the screen is ever screenshotted.
+  titleRow: { flexDirection: "row", alignItems: "center", columnGap: 9 },
+  emblem: { width: 24, height: 24 },
   title: { fontSize: 26, lineHeight: 32, fontWeight: "700", letterSpacing: -0.5, color: "#101418" },
   locationRow: { marginTop: 8, flexDirection: "row", alignItems: "center", gap: 12 },
   location: { flex: 1, minWidth: 0, fontSize: 15, lineHeight: 21, fontWeight: "400", color: "#5D6670" },

@@ -44,17 +44,17 @@ export default function SavedScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <View style={[styles.header, { paddingHorizontal: gutter }]}>
-        {/* The approved lockup, same treatment as Today — this is a top-level
-            destination, so it carries the brand rather than a bare title. */}
-        <Image
-          source={require("@/assets/politick-logo-lockup.png")}
-          style={styles.wordmark}
-          resizeMode="contain"
-          accessibilityLabel="Politick"
-        />
-        <Text style={styles.title} accessibilityRole="header">
-          Saved
-        </Text>
+        <View style={styles.titleRow}>
+          <Image
+            source={require("@/assets/politick-emblem.png")}
+            style={styles.emblem}
+            resizeMode="contain"
+            accessibilityLabel=""
+          />
+          <Text style={styles.title} accessibilityRole="header">
+            Saved
+          </Text>
+        </View>
         <Text style={styles.subtitle}>Stories you&rsquo;ve bookmarked from Today.</Text>
       </View>
 
@@ -92,9 +92,12 @@ export default function SavedScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: color.light.canvas },
   header: { paddingTop: 14, paddingBottom: 16 },
-  // 132x38 keeps the lockup's 1000:287 ratio, matching Today.
-  wordmark: { width: 132, height: 38 },
-  title: { marginTop: 16, fontSize: 26, lineHeight: 32, fontWeight: "700", letterSpacing: -0.5, color: "#101418" },
+  // Brand mark inline with the title, so it costs no vertical space — the
+  // screen title keeps doing the wayfinding and the emblem just makes sure
+  // Politick is present if the screen is ever screenshotted.
+  titleRow: { flexDirection: "row", alignItems: "center", columnGap: 9 },
+  emblem: { width: 24, height: 24 },
+  title: { fontSize: 26, lineHeight: 32, fontWeight: "700", letterSpacing: -0.5, color: "#101418" },
   subtitle: { marginTop: 3, fontSize: 13.5, lineHeight: 19, color: "#5D6670" },
   empty: { alignItems: "center", padding: 48 },
   emptyTitle: { fontSize: 14, fontWeight: "700", color: color.light.ink, marginBottom: 4 },

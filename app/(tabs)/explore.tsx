@@ -155,7 +155,15 @@ export default function ExploreScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={{ paddingHorizontal: gutter }}>
-          <Text style={styles.title} accessibilityRole="header">Explore</Text>
+          <View style={styles.titleRow}>
+            <Image
+              source={require("@/assets/politick-emblem.png")}
+              style={styles.emblem}
+              resizeMode="contain"
+              accessibilityLabel=""
+            />
+            <Text style={styles.title} accessibilityRole="header">Explore</Text>
+          </View>
           <View style={styles.searchField}>
             <Search size={19} color="#7A848D" strokeWidth={1.9} />
             <TextInput
@@ -436,6 +444,11 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: color.light.canvas },
   scroll: { paddingTop: 20, paddingBottom: 110 },
 
+  // Brand mark inline with the title, so it costs no vertical space — the
+  // screen title keeps doing the wayfinding and the emblem just makes sure
+  // Politick is present if the screen is ever screenshotted.
+  titleRow: { flexDirection: "row", alignItems: "center", columnGap: 9 },
+  emblem: { width: 24, height: 24 },
   title: { fontSize: 26, lineHeight: 32, fontWeight: "700", letterSpacing: -0.5, color: "#101418" },
   searchField: {
     marginTop: 14,
