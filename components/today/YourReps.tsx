@@ -97,7 +97,7 @@ export function YourReps({
               />
             ) : (
               <View style={[styles.portrait, styles.portraitEmpty]}>
-                <UserRound size={22} color="#8A929A" strokeWidth={1.8} />
+                <UserRound size={20} color="#8A929A" strokeWidth={1.8} />
               </View>
             )}
 
@@ -120,28 +120,28 @@ export function YourReps({
 }
 
 const styles = StyleSheet.create({
-  section: { marginTop: 26 },
+  section: { marginTop: 22 },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  title: { fontSize: 16, lineHeight: 22, fontWeight: "700", color: "#101418" },
-  viewAll: { fontSize: 14, lineHeight: 20, fontWeight: "600", color: "#167D79" },
+  title: { fontSize: 15, lineHeight: 20, fontWeight: "700", color: "#101418" },
+  viewAll: { fontSize: 13, lineHeight: 18, fontWeight: "600", color: "#167D79" },
 
-  strip: { paddingTop: 12, columnGap: 10 },
+  strip: { paddingTop: 10, columnGap: 9 },
   repCard: {
-    width: 168,
-    height: 96,
-    paddingHorizontal: 12,
+    width: 156,
+    height: 86,
+    paddingHorizontal: 11,
     flexDirection: "row",
     alignItems: "center",
-    columnGap: 10,
+    columnGap: 9,
     borderWidth: 1,
     borderColor: "#DDE1E5",
     borderRadius: 14,
     backgroundColor: "#FFFFFF",
   },
-  portrait: { width: 44, height: 44, borderRadius: 22, backgroundColor: "#EEE9DE" },
+  portrait: { width: 40, height: 40, borderRadius: 20, backgroundColor: "#EEE9DE" },
   portraitEmpty: { alignItems: "center", justifyContent: "center" },
   repText: { flex: 1, minWidth: 0 },
-  repOffice: { fontSize: 11, lineHeight: 15, fontWeight: "600", letterSpacing: 0.2, color: "#5D6670" },
-  repName: { marginTop: 1, fontSize: 13.5, lineHeight: 17, fontWeight: "700", letterSpacing: -0.15, color: "#101418" },
-  repJurisdiction: { marginTop: 1, fontSize: 11, lineHeight: 15, fontWeight: "400", color: "#5D6670" },
+  repOffice: { fontSize: 10.5, lineHeight: 14, fontWeight: "600", letterSpacing: 0.2, color: "#5D6670" },
+  repName: { marginTop: 1, fontSize: 13, lineHeight: 16, fontWeight: "700", letterSpacing: -0.15, color: "#101418" },
+  repJurisdiction: { marginTop: 1, fontSize: 10.5, lineHeight: 14, fontWeight: "400", color: "#5D6670" },
 });

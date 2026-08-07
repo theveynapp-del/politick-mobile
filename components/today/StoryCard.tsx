@@ -33,7 +33,7 @@ export function StoryCard({
   tight: boolean;
 }) {
   const router = useRouter();
-  const mediaSize = tight ? 96 : 100;
+  const mediaSize = tight ? 80 : 84;
 
   // Three tiers, most specific first: the story's own photograph, then a real
   // photo for its topic, then the Politick placeholder.
@@ -75,7 +75,7 @@ export function StoryCard({
           accessibilityLabel={saved ? `Remove ${story.headline} from saved` : `Save ${story.headline}`}
           style={styles.bookmark}
         >
-          <Bookmark size={22} color="#252B30" strokeWidth={1.8} fill={saved ? "#252B30" : "none"} />
+          <Bookmark size={20} color="#252B30" strokeWidth={1.8} fill={saved ? "#252B30" : "none"} />
         </Pressable>
       </View>
 
@@ -105,7 +105,7 @@ export function StoryCard({
       </View>
 
       <View style={styles.why}>
-        <UserRound size={18} color="#167D79" strokeWidth={1.9} style={styles.whyIcon} />
+        <UserRound size={16} color="#167D79" strokeWidth={1.9} style={styles.whyIcon} />
         <Text style={styles.whyText} numberOfLines={2}>
           <Text style={styles.whyPrefix}>{relevance.label} </Text>
           {relevance.text}
@@ -114,12 +114,12 @@ export function StoryCard({
 
       <View style={styles.footer}>
         <View style={styles.footerMeta}>
-          <Clock size={14} color="#5D6670" strokeWidth={1.9} />
+          <Clock size={13} color="#5D6670" strokeWidth={1.9} />
           <Text style={styles.footerText}>{estimateReadMinutes(story)} min read</Text>
         </View>
         <View style={styles.footerDot} />
         <View style={styles.footerMeta}>
-          <FileText size={14} color="#5D6670" strokeWidth={1.9} />
+          <FileText size={13} color="#5D6670" strokeWidth={1.9} />
           <Text style={styles.footerText}>
             {sourceCount} {sourceCount === 1 ? "source" : "sources"}
           </Text>
@@ -139,10 +139,10 @@ export function StoryCard({
             style={styles.goDeeper}
           >
             <Text style={styles.goDeeperText}>Go deeper</Text>
-            <ChevronRight size={15} color="#B84E3C" strokeWidth={2.2} />
+            <ChevronRight size={14} color="#B84E3C" strokeWidth={2.2} />
           </Pressable>
         ) : (
-          <ChevronRight size={20} color="#5D6670" strokeWidth={1.9} />
+          <ChevronRight size={18} color="#5D6670" strokeWidth={1.9} />
         )}
       </View>
     </Pressable>
@@ -151,7 +151,7 @@ export function StoryCard({
 
 const styles = StyleSheet.create({
   card: {
-    padding: 16,
+    padding: 14,
     borderWidth: 1,
     borderColor: "#DDE1E5",
     borderRadius: 16,
@@ -162,48 +162,48 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 1,
   },
-  cardTight: { padding: 14 },
+  cardTight: { padding: 12 },
 
   top: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 10 },
-  scope: { flex: 1, fontSize: 12, lineHeight: 16, fontWeight: "700", letterSpacing: 0.2 },
+  scope: { flex: 1, fontSize: 11, lineHeight: 15, fontWeight: "700", letterSpacing: 0.2 },
   // Pulled out of flow so the 44px target doesn't add height to the row.
-  bookmark: { width: 44, height: 44, alignItems: "flex-end", justifyContent: "flex-start", marginTop: -12, marginRight: -8, marginBottom: -22 },
+  bookmark: { width: 44, height: 44, alignItems: "flex-end", justifyContent: "flex-start", marginTop: -13, marginRight: -8, marginBottom: -24 },
 
-  body: { marginTop: 8, flexDirection: "row", alignItems: "flex-start", columnGap: 14 },
+  body: { marginTop: 6, flexDirection: "row", alignItems: "flex-start", columnGap: 12 },
   bodyNoMedia: { flexDirection: "column" },
   copy: { flex: 1, minWidth: 0 },
-  headline: { fontSize: 20, lineHeight: 26, fontWeight: "700", letterSpacing: -0.25, color: "#101418" },
-  summary: { marginTop: 8, fontSize: 15, lineHeight: 22, fontWeight: "400", color: "#5D6670" },
+  headline: { fontSize: 16.5, lineHeight: 21, fontWeight: "700", letterSpacing: -0.2, color: "#101418" },
+  summary: { marginTop: 6, fontSize: 13.5, lineHeight: 19, fontWeight: "400", color: "#5D6670" },
   media: { borderRadius: 12, backgroundColor: "#EEE9DE" },
 
-  why: { marginTop: 12, flexDirection: "row", alignItems: "flex-start", columnGap: 8 },
+  why: { marginTop: 10, flexDirection: "row", alignItems: "flex-start", columnGap: 7 },
   whyIcon: { marginTop: 1 },
-  whyText: { flex: 1, minWidth: 0, fontSize: 14, lineHeight: 20, fontWeight: "400", color: "#252B30" },
+  whyText: { flex: 1, minWidth: 0, fontSize: 12.5, lineHeight: 17, fontWeight: "400", color: "#252B30" },
   whyPrefix: { fontWeight: "700", color: "#0D5F5B" },
 
   footer: {
-    marginTop: 12,
-    paddingTop: 10,
+    marginTop: 10,
+    paddingTop: 9,
     borderTopWidth: 1,
     borderTopColor: "#DDE1E5",
     flexDirection: "row",
     alignItems: "center",
   },
   footerMeta: { flexDirection: "row", alignItems: "center", columnGap: 5 },
-  footerText: { fontSize: 13, lineHeight: 18, fontWeight: "400", color: "#5D6670" },
-  footerDot: { width: 1, height: 12, marginHorizontal: 10, backgroundColor: "#DDE1E5" },
+  footerText: { fontSize: 12, lineHeight: 16, fontWeight: "400", color: "#5D6670" },
+  footerDot: { width: 1, height: 11, marginHorizontal: 9, backgroundColor: "#DDE1E5" },
   footerSpacer: { flex: 1 },
 
   goDeeper: {
     flexDirection: "row",
     alignItems: "center",
     columnGap: 2,
-    height: 30,
-    paddingLeft: 11,
-    paddingRight: 8,
+    height: 27,
+    paddingLeft: 10,
+    paddingRight: 7,
     borderWidth: 1,
     borderColor: "#B84E3C",
     borderRadius: 999,
   },
-  goDeeperText: { fontSize: 14, lineHeight: 18, fontWeight: "600", color: "#B84E3C" },
+  goDeeperText: { fontSize: 12.5, lineHeight: 16, fontWeight: "600", color: "#B84E3C" },
 });

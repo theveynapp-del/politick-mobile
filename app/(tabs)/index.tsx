@@ -169,33 +169,34 @@ const styles = StyleSheet.create({
   // Clears the fixed bottom tab bar so the reps strip is never stranded behind it.
   scrollArea: { paddingBottom: 96 },
 
-  brandRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop: 14 },
-  // 153x44 keeps the lockup's 1000:287 aspect ratio at the spec's 42-46px height.
-  wordmark: { width: 153, height: 44 },
+  brandRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop: 12 },
+  // 132x38 keeps the lockup's 1000:287 aspect ratio. The spec's 42-46px was
+  // sized off a wider mockup canvas and reads oversized on a real handset.
+  wordmark: { width: 132, height: 38 },
   iconButton: { width: 44, height: 44, alignItems: "flex-end", justifyContent: "center" },
 
-  greetingBlock: { marginTop: 24 },
-  greeting: { fontSize: 28, lineHeight: 34, fontWeight: "700", letterSpacing: -0.45, color: "#101418" },
-  date: { marginTop: 4, fontSize: 16, lineHeight: 22, fontWeight: "400", color: "#5D6670" },
+  greetingBlock: { marginTop: 18 },
+  greeting: { fontSize: 22, lineHeight: 28, fontWeight: "700", letterSpacing: -0.35, color: "#101418" },
+  date: { marginTop: 3, fontSize: 13.5, lineHeight: 18, fontWeight: "400", color: "#5D6670" },
 
-  dailyFive: { marginTop: 38 },
-  dailyFiveTitle: { fontSize: 32, lineHeight: 38, fontWeight: "700", letterSpacing: -0.6, color: "#101418" },
-  dailyFiveRow: { marginTop: 4, flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 12 },
-  dailyFiveSupporting: { flex: 1, minWidth: 0, fontSize: 17, lineHeight: 24, fontWeight: "500", color: "#252B30" },
-  progressStatus: { fontSize: 16, lineHeight: 22, fontWeight: "600", color: "#252B30" },
+  dailyFive: { marginTop: 26 },
+  dailyFiveTitle: { fontSize: 22, lineHeight: 28, fontWeight: "700", letterSpacing: -0.4, color: "#101418" },
+  dailyFiveRow: { marginTop: 3, flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 12 },
+  dailyFiveSupporting: { flex: 1, minWidth: 0, fontSize: 13.5, lineHeight: 19, fontWeight: "500", color: "#252B30" },
+  progressStatus: { fontSize: 13, lineHeight: 18, fontWeight: "600", color: "#252B30" },
 
-  progressTrack: { marginTop: 14, height: 7, borderRadius: 999, overflow: "hidden", backgroundColor: "#E6E3DC" },
+  progressTrack: { marginTop: 12, height: 6, borderRadius: 999, overflow: "hidden", backgroundColor: "#E6E3DC" },
   progressValue: { height: "100%", borderRadius: 999, backgroundColor: "#167D79" },
 
-  filters: { marginTop: 22, flexDirection: "row", gap: 8 },
+  filters: { marginTop: 16, flexDirection: "row", gap: 8 },
   filtersTight: { gap: 6 },
   chip: {
-    height: 40,
+    height: 34,
     // Spec asks for 15-17px padding *and* all five chips on one row at 390px.
     // Those don't hold together: at 15px they overrun the 350px content width
     // and "World" clips. One row is the stated acceptance criterion, so the
     // padding gives way.
-    paddingHorizontal: 12,
+    paddingHorizontal: 13,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: "#DDE1E5",
@@ -203,11 +204,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  chipTight: { paddingHorizontal: 9 },
+  chipTight: { paddingHorizontal: 10 },
   chipSelected: { backgroundColor: "#0D5F5B", borderColor: "#0D5F5B" },
-  chipText: { fontSize: 14, lineHeight: 18, fontWeight: "600", color: "#252B30" },
+  chipText: { fontSize: 13, lineHeight: 17, fontWeight: "600", color: "#252B30" },
   chipTextSelected: { color: "#FFFFFF" },
 
-  storyList: { marginTop: 20, gap: 13 },
+  storyList: { marginTop: 16, gap: 10 },
   emptyText: { textAlign: "center", color: "#5D6670", fontSize: 13.5, padding: 48 },
 });
