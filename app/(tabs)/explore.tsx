@@ -25,6 +25,7 @@ import { searchExplore, ExploreSearchResult } from "@/lib/exploreSearch";
 import { searchBills, BillSearchResult } from "@/lib/billSearch";
 import { getGovActivity, bioguideIdsFor, GovActivityItem } from "@/lib/govActivity";
 import { detectTerm, JargonTerm } from "@/lib/jargon";
+import { defineTerm, DefinitionResult } from "@/lib/defineTerm";
 import { stageFromAction } from "@/lib/billStage";
 import { SectionHeader } from "@/components/explore/SectionHeader";
 import {
@@ -54,6 +55,11 @@ export default function ExploreScreen() {
   const [activeQuery, setActiveQuery] = useState<string | null>(null);
   const [result, setResult] = useState<ExploreSearchResult | null>(null);
   const [bills, setBills] = useState<BillSearchResult | null>(null);
+  // The explainer lane: what the term means, even when nothing in the app
+  // covers it. Either a reviewed entry from the jargon library or, failing
+  // that, a definition-only model answer.
+  const [defn, setDefn] = useState<DefinitionResult | null>(null);
+  const [defnTerm, setDefnTerm] = useState<JargonTerm | null>(null);
 
   const [stateName, setStateName] = useState<string | null>(null);
   const [placeLabel, setPlaceLabel] = useState<string | null>(null);
@@ -99,12 +105,22 @@ export default function ExploreScreen() {
     setActiveQuery(q);
     setResult(null);
     setBills(null);
-    const [coverage, legislation] = await Promise.all([
+    setDefn(null);
+    setDefnTerm(null);
+
+    // The library is free, instant and hand-checked, so it wins when it has
+    // the term; the model is only asked about words it doesn't cover.
+    const known = detectTerm(q);
+    setDefnTerm(known);
+
+    const [coverage, legislation, definition] = await Promise.all([
       searchExplore(supabase, q, { state: stateName, topics }),
       searchBills(supabase, q),
+      known ? Promise.resolve(null) : defineTerm(supabase, q),
     ]);
     setResult(coverage);
     setBills(legislation);
+    setDefn(definition);
     setSearching(false);
   };
 
@@ -113,6 +129,8 @@ export default function ExploreScreen() {
     setActiveQuery(null);
     setResult(null);
     setBills(null);
+    setDefn(null);
+    setDefnTerm(null);
   };
 
   const repFor = (bioguideId: string) => reps.find((r) => r.externalId === bioguideId) ?? null;
@@ -155,6 +173,31 @@ export default function ExploreScreen() {
 
         {(searching || result || bills) && (
           <View style={[styles.searchResults, { paddingHorizontal: gutter }]}>
+            {!searching && (defnTerm || defn?.found) ? (
+              <Pressable
+                onPress={() => {
+                  if (defnTerm) {
+                    setSheetTerm(defnTerm);
+                    setSheetContext(null);
+                  }
+                }}
+                disabled={!defnTerm}
+                accessibilityRole={defnTerm ? "button" : undefined}
+                style={styles.defnCard}
+              >
+                <Text style={styles.defnLabel}>WHAT THIS MEANS</Text>
+                <Text style={styles.defnTerm}>{defnTerm ? defnTerm.term : defn?.term}</Text>
+                <Text style={styles.defnBody}>
+                  {defnTerm ? defnTerm.shortDefinition : defn?.definition}
+                </Text>
+                <Text style={styles.defnNote}>
+                  {defnTerm
+                    ? "Tap for the full explanation."
+                    : "A general definition, not coverage of a specific bill or event."}
+                </Text>
+              </Pressable>
+            ) : null}
+
             <View style={styles.resultCard}>
               <View style={styles.resultHeader}>
                 <Sparkles size={14} color={color.brand.deepTeal} />
@@ -415,6 +458,19 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 13.5, lineHeight: 19, color: "#5D6670" },
 
   searchResults: { marginTop: 20 },
+  defnCard: {
+    marginBottom: 12,
+    padding: 15,
+    borderWidth: 1,
+    borderColor: "rgba(22,125,121,0.18)",
+    borderRadius: 14,
+    backgroundColor: "#F3FAF8",
+  },
+  defnLabel: { fontSize: 10.5, lineHeight: 14, fontWeight: "700", letterSpacing: 0.5, color: "#0D5F5B" },
+  defnTerm: { marginTop: 4, fontSize: 17, lineHeight: 23, fontWeight: "700", letterSpacing: -0.2, color: "#101418", textTransform: "capitalize" },
+  defnBody: { marginTop: 5, fontSize: 13.5, lineHeight: 20, color: "#41484F" },
+  defnNote: { marginTop: 8, fontSize: 11.5, lineHeight: 16, color: "#5D6670" },
+
   resultCard: { backgroundColor: color.brand.warmSand, borderRadius: 14, padding: 16 },
   resultHeader: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 },
   resultHeaderText: { flex: 1, fontSize: 11, fontWeight: "700", color: color.brand.deepTeal, textTransform: "uppercase", letterSpacing: 0.3 },
