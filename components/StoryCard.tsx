@@ -5,7 +5,7 @@ import { Bookmark } from "lucide-react-native";
 import { color, radius } from "@/lib/tokens";
 import { Story } from "@/lib/types";
 import { storyImages } from "@/lib/storyImages";
-import { StoryThumbnail } from "./StoryThumbnail";
+import { StoryPlaceholder } from "./StoryPlaceholder";
 
 const categoryColor: Record<Story["scope"], string> = {
   Local: "#795c17",
@@ -59,7 +59,7 @@ export function StoryCard({
         {image ? (
           <Image source={image} style={styles.thumb} />
         ) : (
-          <StoryThumbnail scope={story.scope} />
+          <StoryPlaceholder style={styles.thumb} />
         )}
       </View>
 

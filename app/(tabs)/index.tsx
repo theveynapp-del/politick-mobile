@@ -8,7 +8,7 @@ import { color } from "@/lib/tokens";
 import { supabase } from "@/lib/supabase";
 import { getTodayStories } from "@/lib/queries";
 import { Story, TopicScope } from "@/lib/types";
-import { StoryThumbnail } from "@/components/StoryThumbnail";
+import { StoryPlaceholder } from "@/components/StoryPlaceholder";
 import { topicImageFor } from "@/lib/topicImages";
 import { estimateReadMinutes } from "@/lib/readTime";
 import { getStoredZip, getStoredName } from "@/lib/onboarding";
@@ -47,8 +47,8 @@ function TodayStoryCard({
   const imageSize = tight ? 96 : 105;
 
   // Three tiers, most specific first: the story's own photograph, then a
-  // real photo for its topic, then an abstract mark that doesn't pretend to
-  // be a photograph of anything.
+  // real photo for its topic, then the Politick placeholder — which reads as
+  // branding rather than pretending to be a photograph of anything.
   const [remoteFailed, setRemoteFailed] = useState(false);
   const remote = !remoteFailed && story.imageUrl ? story.imageUrl : null;
   const topical = remote ? null : topicImageFor(story.topic);
@@ -109,9 +109,7 @@ function TodayStoryCard({
             accessibilityLabel={`${story.topic} — illustrative photograph`}
           />
         ) : (
-          <View style={[styles.storyImage, styles.storyImageFallback, { width: imageSize, height: imageSize }]}>
-            <StoryThumbnail scope={story.scope} size={Math.round(imageSize * 0.55)} />
-          </View>
+          <StoryPlaceholder style={[styles.storyImage, { width: imageSize, height: imageSize }]} />
         )}
       </View>
     </Pressable>
@@ -313,7 +311,6 @@ const styles = StyleSheet.create({
   storyHeadline: { fontSize: 18, lineHeight: 24, fontWeight: "700", letterSpacing: -0.2, color: "#101418" },
   storySummary: { marginTop: 12, fontSize: 14, lineHeight: 20, fontWeight: "400", color: "#252B30" },
   storyImage: { borderRadius: 12, backgroundColor: color.brand.softTeal },
-  storyImageFallback: { alignItems: "center", justifyContent: "center" },
 
   emptyText: { textAlign: "center", color: "#5D6670", fontSize: 13.5, padding: 48 },
 });

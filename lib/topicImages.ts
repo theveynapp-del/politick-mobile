@@ -17,8 +17,8 @@
  *   killing is exploitative and can misrepresent the event. These use the
  *   article's own photo or none at all.
  *
- * Anything unmapped falls back to the abstract scope thumbnail, which is
- * honest about being a placeholder.
+ * Anything unmapped falls back to the Politick placeholder, which is honest
+ * about being branding rather than a photograph of the story.
  */
 export const topicImages: Record<string, number> = {
   Congress: require("../assets/topics/congress.jpg"),

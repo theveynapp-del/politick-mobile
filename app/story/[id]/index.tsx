@@ -9,7 +9,7 @@ import { supabase } from "@/lib/supabase";
 import { getTodayStories } from "@/lib/queries";
 import { Story } from "@/lib/types";
 import { storyImages } from "@/lib/storyImages";
-import { StoryThumbnail } from "@/components/StoryThumbnail";
+import { StoryPlaceholder } from "@/components/StoryPlaceholder";
 import { getSavedIds, toggleSavedId } from "@/lib/savedStories";
 
 export default function StoryDetailScreen() {
@@ -60,9 +60,7 @@ export default function StoryDetailScreen() {
           {image ? (
             <Image source={image} style={styles.heroImage} />
           ) : (
-            <View style={styles.heroImage}>
-              <StoryThumbnail scope={story.scope} size={100} />
-            </View>
+            <StoryPlaceholder style={styles.heroImage} />
           )}
           <Text style={styles.byline}>Politick Editorial Desk</Text>
         </View>
