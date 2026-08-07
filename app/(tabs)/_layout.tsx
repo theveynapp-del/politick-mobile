@@ -32,18 +32,13 @@ export default function TabLayout() {
           elevation: 0,
           shadowOpacity: 0,
         },
-        // Spec asks for 10-11px *and* the full word "Representatives", which
-        // don't both fit a 78px tab — at 10px it still clipped to
-        // "Represent…". The full label is the explicit requirement, so this
-        // sits 1px under the range. Applied uniformly so all five labels stay
-        // visually equal.
-        tabBarLabelStyle: { fontSize: 9, lineHeight: 12, fontWeight: "500", letterSpacing: -0.3 },
+        // "Representatives" never fit a 78px tab and forced every label down to
+        // 9px to stay uniform. Shortening it to "Reps" puts the whole set back
+        // in the spec's 10-11px range at a comfortable width.
+        tabBarLabelStyle: { fontSize: 11, lineHeight: 14, fontWeight: "500", letterSpacing: -0.1 },
         // Default leaves only ~2px between icon and label, which reads as the
         // label being stuck to the icon; this makes the spec's 4px gap.
         tabBarIconStyle: { marginBottom: 2 },
-        // Each tab is only ~78px wide; default item padding left "Representatives"
-        // 7px short and it truncated to "Represent…". The spec requires the full
-        // word, so the padding goes rather than the label.
         tabBarItemStyle: { paddingHorizontal: 0 },
       }}
     >
@@ -64,7 +59,12 @@ export default function TabLayout() {
       />
       <Tabs.Screen
         name="reps"
-        options={{ title: "Representatives", tabBarIcon: ({ color: c }) => <Users color={c} size={24} strokeWidth={1.8} /> }}
+        options={{
+          title: "Reps",
+          // The tab reads "Reps" to fit; screen readers get the full word.
+          tabBarAccessibilityLabel: "Representatives",
+          tabBarIcon: ({ color: c }) => <Users color={c} size={24} strokeWidth={1.8} />,
+        }}
       />
       <Tabs.Screen
         name="saved"
