@@ -19,7 +19,10 @@ export default function TabLayout() {
         tabBarInactiveTintColor: "#5D6670",
         tabBarStyle: {
           height: 76 + insets.bottom,
-          paddingTop: 10,
+          // React Navigation contributes ~8px of its own above the icon, so
+          // this lands the 42px icon+label block at roughly 17/19 within the
+          // 76px bar rather than pinned to the top.
+          paddingTop: 9,
           paddingBottom: insets.bottom,
           backgroundColor: "rgba(255,255,255,0.98)",
           borderTopWidth: 1,
@@ -35,7 +38,9 @@ export default function TabLayout() {
         // sits 1px under the range. Applied uniformly so all five labels stay
         // visually equal.
         tabBarLabelStyle: { fontSize: 9, lineHeight: 12, fontWeight: "500", letterSpacing: -0.3 },
-        tabBarIconStyle: { marginBottom: 0 },
+        // Default leaves only ~2px between icon and label, which reads as the
+        // label being stuck to the icon; this makes the spec's 4px gap.
+        tabBarIconStyle: { marginBottom: 2 },
         // Each tab is only ~78px wide; default item padding left "Representatives"
         // 7px short and it truncated to "Represent…". The spec requires the full
         // word, so the padding goes rather than the label.
