@@ -1,11 +1,12 @@
 import { View, Image, Pressable, StyleSheet, Linking } from "react-native";
 import { Text } from "@/components/Text";
-import { ChevronRight, ExternalLink, UserRound, Plus, FileText, HelpCircle } from "lucide-react-native";
+import { ChevronRight, ExternalLink, UserRound, Plus, FileText, HelpCircle, MapPin } from "lucide-react-native";
+import { ISSUE_META } from "@/lib/issueIcons";
 import { BillStage, stageFromAction } from "@/lib/billStage";
 import { GovActivityItem } from "@/lib/govActivity";
 import { JargonTerm } from "@/lib/jargon";
 
-export const CARD_WIDTH = 305;
+export const CARD_WIDTH = 288;
 
 /**
  * The stage a bill has reached, read from its official latest action. Renders
@@ -30,11 +31,13 @@ export function GovernmentActivityCard({
   item,
   repName,
   repPhoto,
+  fullWidth,
   onPress,
 }: {
   item: GovActivityItem;
   repName: string | null;
   repPhoto: string | null;
+  fullWidth?: boolean;
   onPress: () => void;
 }) {
   const stage = stageFromAction(item.latestAction);
@@ -43,7 +46,7 @@ export function GovernmentActivityCard({
       onPress={onPress}
       accessibilityRole="link"
       accessibilityLabel={`${item.citation}, ${item.title}. Opens congress.gov.`}
-      style={styles.govCard}
+      style={[styles.govCard, fullWidth && styles.govCardFull]}
     >
       <Text style={styles.eyebrow} numberOfLines={1}>
         FEDERAL{item.policyArea ? ` · ${item.policyArea.toUpperCase()}` : ""}
@@ -206,63 +209,100 @@ export function ContextLearningCard({
 }
 
 export function IssueChip({ label, onPress }: { label: string; onPress: () => void }) {
+  const meta = ISSUE_META[label];
+  const Icon = meta?.icon;
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={styles.issueChip}>
+      {Icon ? <Icon size={15} color={meta.color} strokeWidth={2} /> : null}
       <Text style={styles.issueChipText}>{label}</Text>
     </Pressable>
   );
 }
 
 /**
- * Election Center fails closed. Ballot data has no source yet, so this states
- * that plainly instead of rendering an empty shell that implies coverage.
+ * Election Center fails closed. The panel, year pill and ballot artwork follow
+ * the reference, but the body states actual coverage and there is no call to
+ * action, because a button promising a ballot we cannot source would be the
+ * one thing this module must never do.
  */
-export function ElectionCenterCard({ placeLabel, gutter }: { placeLabel: string | null; gutter: number }) {
+export function ElectionCenterCard({
+  placeLabel,
+  cycleYear,
+  gutter,
+}: {
+  placeLabel: string | null;
+  cycleYear: string;
+  gutter: number;
+}) {
   return (
     <View style={{ paddingHorizontal: gutter }}>
       <View style={styles.electionCard}>
-        <Text style={styles.electionTitle}>Your election center</Text>
-        <Text style={styles.electionBody}>
-          {placeLabel
-            ? `No supported election information is available for ${placeLabel} right now.`
-            : "No supported election information is available for your location right now."}
-        </Text>
-        <Text style={styles.electionNote}>
-          We'll turn this on when we can source a complete ballot for your area.
-        </Text>
+        <View style={styles.electionCopy}>
+          <View style={styles.electionTitleRow}>
+            <Text style={styles.electionTitle}>Your election center</Text>
+            <View style={styles.electionYear}>
+              <Text style={styles.electionYearText}>{cycleYear}</Text>
+            </View>
+          </View>
+
+          {placeLabel ? (
+            <View style={styles.electionPlace}>
+              <MapPin size={13} color="#41484F" strokeWidth={2} />
+              <Text style={styles.electionPlaceText} numberOfLines={1}>
+                {placeLabel}
+              </Text>
+            </View>
+          ) : null}
+
+          <Text style={styles.electionBody}>
+            What's on your ballot, what each office controls, and key voting information.
+          </Text>
+          <Text style={styles.electionNote}>
+            Not available yet — we'll turn this on once we can source a complete ballot for your
+            area.
+          </Text>
+        </View>
+
+        <Image
+          source={require("@/assets/explore/ballot.png")}
+          style={styles.electionArt}
+          resizeMode="contain"
+          accessibilityLabel=""
+        />
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  eyebrow: { fontSize: 10.5, lineHeight: 14, fontWeight: "700", letterSpacing: 0.4, color: "#0D5F5B" },
-  microLabel: { fontSize: 9.5, lineHeight: 13, fontWeight: "700", letterSpacing: 0.4, color: "#8A929A" },
-  microValue: { marginTop: 4, fontSize: 11.5, lineHeight: 15, color: "#41484F" },
+  eyebrow: { fontSize: 10, lineHeight: 13, fontWeight: "700", letterSpacing: 0.4, color: "#0D5F5B" },
+  microLabel: { fontSize: 9, lineHeight: 12, fontWeight: "700", letterSpacing: 0.4, color: "#8A929A" },
+  microValue: { marginTop: 3, fontSize: 11, lineHeight: 14, color: "#41484F" },
 
   govCard: {
     width: CARD_WIDTH,
-    padding: 14,
+    padding: 13,
     borderWidth: 1,
     borderColor: "#DDE1E5",
     borderRadius: 16,
     backgroundColor: "#FFFFFF",
   },
-  govTitle: { marginTop: 6, fontSize: 16.5, lineHeight: 21, fontWeight: "700", letterSpacing: -0.2, color: "#101418" },
-  govCitation: { marginTop: 4, fontSize: 12, lineHeight: 16, color: "#5D6670" },
+  govTitle: { marginTop: 5, fontSize: 14.5, lineHeight: 19, fontWeight: "700", letterSpacing: -0.2, color: "#101418" },
+  govCitation: { marginTop: 3, fontSize: 11.5, lineHeight: 15, color: "#5D6670" },
   govFooter: { marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: "#E7E9EC", flexDirection: "row" },
   govFooterCol: { flex: 1, minWidth: 0 },
   govFooterDivider: { width: 1, marginHorizontal: 10, backgroundColor: "#E7E9EC" },
   stageBadge: { marginTop: 5, alignSelf: "flex-start", paddingHorizontal: 9, paddingVertical: 4, borderRadius: 8, backgroundColor: "#DCEFED" },
-  stageBadgeText: { fontSize: 11.5, lineHeight: 15, fontWeight: "700", color: "#0D5F5B" },
+  stageBadgeText: { fontSize: 11, lineHeight: 14, fontWeight: "700", color: "#0D5F5B" },
   repRow: { marginTop: 5, flexDirection: "row", alignItems: "center", columnGap: 7 },
   repAvatar: { width: 26, height: 26, borderRadius: 13, backgroundColor: "#EEE9DE" },
   repAvatarEmpty: { alignItems: "center", justifyContent: "center" },
-  repName: { fontSize: 12, lineHeight: 16, fontWeight: "700", color: "#101418" },
-  repRelationship: { fontSize: 11, lineHeight: 15, color: "#5D6670" },
+  repName: { fontSize: 11.5, lineHeight: 15, fontWeight: "700", color: "#101418" },
+  repRelationship: { fontSize: 10.5, lineHeight: 14, color: "#5D6670" },
   govCta: { marginTop: 12, flexDirection: "row", alignItems: "center", columnGap: 5 },
-  govCtaText: { fontSize: 13.5, lineHeight: 18, fontWeight: "700", color: "#0D5F5B" },
+  govCtaText: { fontSize: 12.5, lineHeight: 17, fontWeight: "700", color: "#0D5F5B" },
 
+  govCardFull: { width: "100%" },
   officialCard: {
     width: CARD_WIDTH,
     padding: 14,
@@ -272,16 +312,16 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
   officialHeader: { flexDirection: "row", alignItems: "center", columnGap: 10 },
-  officialAvatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: "#EEE9DE" },
-  officialName: { fontSize: 16, lineHeight: 21, fontWeight: "700", letterSpacing: -0.2, color: "#101418" },
-  officialOffice: { marginTop: 1, fontSize: 12, lineHeight: 17, color: "#5D6670" },
-  officialEmpty: { marginTop: 12, fontSize: 12.5, lineHeight: 17, color: "#5D6670" },
+  officialAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: "#EEE9DE" },
+  officialName: { fontSize: 14.5, lineHeight: 19, fontWeight: "700", letterSpacing: -0.2, color: "#101418" },
+  officialOffice: { marginTop: 1, fontSize: 11.5, lineHeight: 16, color: "#5D6670" },
+  officialEmpty: { marginTop: 10, fontSize: 12, lineHeight: 16, color: "#5D6670" },
   activityRow: { marginTop: 12, flexDirection: "row", columnGap: 9 },
   activityIcon: { width: 22, height: 22, borderRadius: 11, backgroundColor: "#DCEFED", alignItems: "center", justifyContent: "center" },
   activityTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", columnGap: 8 },
-  activityAction: { fontSize: 12.5, lineHeight: 17, fontWeight: "700", color: "#101418" },
-  activityDate: { fontSize: 11, lineHeight: 15, color: "#8A929A" },
-  activityTitle: { marginTop: 1, fontSize: 12, lineHeight: 16, color: "#5D6670" },
+  activityAction: { fontSize: 12, lineHeight: 16, fontWeight: "700", color: "#101418" },
+  activityDate: { fontSize: 10.5, lineHeight: 14, color: "#8A929A" },
+  activityTitle: { marginTop: 1, fontSize: 11.5, lineHeight: 15, color: "#5D6670" },
 
   learnCard: {
     padding: 15,
@@ -292,14 +332,16 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: "#F3FAF8",
   },
-  learnTitle: { fontSize: 15.5, lineHeight: 21, fontWeight: "700", letterSpacing: -0.15, color: "#101418" },
-  learnContext: { marginTop: 4, fontSize: 13, lineHeight: 18, color: "#41484F" },
+  learnTitle: { fontSize: 14.5, lineHeight: 19, fontWeight: "700", letterSpacing: -0.15, color: "#101418" },
+  learnContext: { marginTop: 4, fontSize: 12.5, lineHeight: 17, color: "#41484F" },
   learnCta: { marginTop: 8, flexDirection: "row", alignItems: "center", columnGap: 3 },
-  learnCtaText: { fontSize: 13, lineHeight: 18, fontWeight: "700", color: "#0D5F5B" },
+  learnCtaText: { fontSize: 12.5, lineHeight: 17, fontWeight: "700", color: "#0D5F5B" },
 
   issueChip: {
-    height: 39,
-    paddingHorizontal: 14,
+    height: 36,
+    flexDirection: "row",
+    columnGap: 6,
+    paddingHorizontal: 12,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 999,
@@ -307,16 +349,28 @@ const styles = StyleSheet.create({
     borderColor: "#DDE1E5",
     backgroundColor: "#FFFFFF",
   },
-  issueChipText: { fontSize: 13.5, lineHeight: 18, fontWeight: "600", color: "#252B30" },
+  issueChipText: { fontSize: 12.5, lineHeight: 17, fontWeight: "600", color: "#252B30" },
 
   electionCard: {
-    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    columnGap: 10,
+    paddingLeft: 15,
+    paddingVertical: 14,
     borderWidth: 1,
-    borderColor: "#DDE1E5",
+    borderColor: "rgba(22,125,121,0.20)",
     borderRadius: 16,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#EDF5F4",
+    overflow: "hidden",
   },
-  electionTitle: { fontSize: 16, lineHeight: 21, fontWeight: "700", color: "#101418" },
-  electionBody: { marginTop: 6, fontSize: 13, lineHeight: 19, color: "#41484F" },
-  electionNote: { marginTop: 6, fontSize: 12, lineHeight: 17, color: "#8A929A" },
+  electionCopy: { flex: 1, minWidth: 0 },
+  electionTitleRow: { flexDirection: "row", alignItems: "center", columnGap: 8 },
+  electionTitle: { fontSize: 15.5, lineHeight: 20, fontWeight: "700", letterSpacing: -0.2, color: "#101418" },
+  electionYear: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: "#DCEFED" },
+  electionYearText: { fontSize: 11, lineHeight: 15, fontWeight: "700", color: "#0D5F5B" },
+  electionPlace: { marginTop: 4, flexDirection: "row", alignItems: "center", columnGap: 4 },
+  electionPlaceText: { fontSize: 12, lineHeight: 16, fontWeight: "600", color: "#41484F" },
+  electionBody: { marginTop: 6, fontSize: 12.5, lineHeight: 17, color: "#41484F" },
+  electionNote: { marginTop: 6, fontSize: 11.5, lineHeight: 16, fontWeight: "500", color: "#5D6670" },
+  electionArt: { width: 104, height: 74, marginRight: -6 },
 });

@@ -36,11 +36,12 @@ import {
 } from "@/components/explore/cards";
 import { JargonSheet } from "@/components/explore/JargonSheet";
 
+import { CORE_ISSUES, EXTRA_ISSUES } from "@/lib/issueIcons";
+
 const DEFAULT_ZIP = "20814";
-const ISSUES = [
-  "Economy", "Housing", "Healthcare", "Immigration", "Trade",
-  "Education", "Climate", "Technology", "Taxes", "Energy",
-];
+
+/** The next federal general election. Fixed and factual, not a data claim. */
+const CYCLE_YEAR = "2026";
 
 export default function ExploreScreen() {
   const router = useRouter();
@@ -61,6 +62,13 @@ export default function ExploreScreen() {
   const [reps, setReps] = useState<Representative[]>([]);
   const [activity, setActivity] = useState<GovActivityItem[]>([]);
   const [activityLoading, setActivityLoading] = useState(true);
+
+  // "See all" expands in place. Every section it appears on has more real
+  // items to show, so it does something rather than routing to a page that
+  // doesn't exist yet.
+  const [showAllGov, setShowAllGov] = useState(false);
+  const [showAllIssues, setShowAllIssues] = useState(false);
+  const [showAllWorld, setShowAllWorld] = useState(false);
 
   const [sheetTerm, setSheetTerm] = useState<JargonTerm | null>(null);
   const [sheetContext, setSheetContext] = useState<string | null>(null);
@@ -217,6 +225,8 @@ export default function ExploreScreen() {
           <SectionHeader
             title="In your government"
             subtitle="Recent legislation and activity connected to your representatives."
+            actionLabel={activity.length > 4 ? (showAllGov ? "Show less" : "See all") : undefined}
+            onAction={activity.length > 4 ? () => setShowAllGov((v) => !v) : undefined}
             gutter={gutter}
           />
           {activityLoading ? (
@@ -229,11 +239,15 @@ export default function ExploreScreen() {
             </View>
           ) : (
             <ScrollView
-              horizontal
+              horizontal={!showAllGov}
+              scrollEnabled={!showAllGov}
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={[styles.strip, { paddingHorizontal: gutter }]}
+              contentContainerStyle={[
+                showAllGov ? styles.stack : styles.strip,
+                { paddingHorizontal: gutter },
+              ]}
             >
-              {activity.slice(0, 8).map((item, i) => {
+              {activity.slice(0, showAllGov ? 12 : 8).map((item, i) => {
                 const rep = repFor(item.bioguideId);
                 return (
                   <GovernmentActivityCard
@@ -241,6 +255,7 @@ export default function ExploreScreen() {
                     item={item}
                     repName={rep?.name ?? null}
                     repPhoto={rep?.photoUrl ?? null}
+                    fullWidth={showAllGov}
                     onPress={() => openBill(item)}
                   />
                 );
@@ -266,7 +281,12 @@ export default function ExploreScreen() {
 
         {federalReps.length > 0 ? (
           <View style={styles.section}>
-            <SectionHeader title="Your officials in action" gutter={gutter} />
+            <SectionHeader
+              title="Your officials in action"
+              actionLabel="See all"
+              onAction={() => router.push("/reps")}
+              gutter={gutter}
+            />
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -291,9 +311,14 @@ export default function ExploreScreen() {
         ) : null}
 
         <View style={styles.section}>
-          <SectionHeader title="Explore an issue" gutter={gutter} />
+          <SectionHeader
+            title="Explore an issue"
+            actionLabel={showAllIssues ? "Show less" : "See all"}
+            onAction={() => setShowAllIssues((v) => !v)}
+            gutter={gutter}
+          />
           <View style={[styles.issueGrid, { paddingHorizontal: gutter }]}>
-            {ISSUES.map((issue) => (
+            {(showAllIssues ? [...CORE_ISSUES, ...EXTRA_ISSUES] : CORE_ISSUES).map((issue) => (
               <IssueChip
                 key={issue}
                 label={issue}
@@ -307,11 +332,16 @@ export default function ExploreScreen() {
         </View>
 
         <View style={styles.section}>
-          <ElectionCenterCard placeLabel={placeLabel} gutter={gutter} />
+          <ElectionCenterCard placeLabel={placeLabel} cycleYear={CYCLE_YEAR} gutter={gutter} />
         </View>
 
         <View style={styles.section}>
-          <SectionHeader title="Around the world" gutter={gutter} />
+          <SectionHeader
+            title="Around the world"
+            actionLabel={worldStories.length > 5 ? (showAllWorld ? "Show less" : "See all") : undefined}
+            onAction={worldStories.length > 5 ? () => setShowAllWorld((v) => !v) : undefined}
+            gutter={gutter}
+          />
           <View style={{ paddingHorizontal: gutter }}>
             <View style={styles.worldModule}>
               <Image
@@ -325,7 +355,7 @@ export default function ExploreScreen() {
                   <Text style={styles.emptyText}>No world coverage available right now.</Text>
                 </View>
               ) : (
-                worldStories.slice(0, 5).map((story, i) => (
+                worldStories.slice(0, showAllWorld ? worldStories.length : 5).map((story, i) => (
                   <Pressable
                     key={story.id}
                     onPress={() => router.push(`/story/${story.id}`)}
@@ -340,7 +370,7 @@ export default function ExploreScreen() {
                       <Text style={styles.worldHeadline} numberOfLines={2}>{story.headline}</Text>
                     </View>
                     <ChevronRight size={20} color="#5D6670" strokeWidth={1.9} />
-                    {i < Math.min(worldStories.length, 5) - 1 ? <View style={styles.worldDivider} /> : null}
+                    {i < Math.min(worldStories.length, showAllWorld ? worldStories.length : 5) - 1 ? <View style={styles.worldDivider} /> : null}
                   </Pressable>
                 ))
               )}
@@ -363,10 +393,10 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: color.light.canvas },
   scroll: { paddingTop: 20, paddingBottom: 110 },
 
-  title: { fontSize: 30, lineHeight: 36, fontWeight: "700", letterSpacing: -0.5, color: "#101418" },
+  title: { fontSize: 26, lineHeight: 32, fontWeight: "700", letterSpacing: -0.5, color: "#101418" },
   searchField: {
-    marginTop: 16,
-    height: 46,
+    marginTop: 14,
+    height: 44,
     paddingHorizontal: 14,
     flexDirection: "row",
     alignItems: "center",
@@ -376,10 +406,11 @@ const styles = StyleSheet.create({
     borderColor: "#DDE1E5",
     backgroundColor: "#FFFFFF",
   },
-  searchInput: { flex: 1, minWidth: 0, fontSize: 14, lineHeight: 20, fontWeight: "400", color: "#101418" },
+  searchInput: { flex: 1, minWidth: 0, fontSize: 13.5, lineHeight: 19, fontWeight: "400", color: "#101418" },
 
-  section: { marginTop: 26 },
+  section: { marginTop: 22 },
   strip: { columnGap: 12 },
+  stack: { flexDirection: "column", rowGap: 12 },
   issueGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   emptyText: { fontSize: 13.5, lineHeight: 19, color: "#5D6670" },
 
@@ -405,14 +436,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
   hitScope: { fontSize: 10.5, lineHeight: 14, fontWeight: "700", letterSpacing: 0.3, color: "#5D6670" },
-  hitHeadline: { marginTop: 2, fontSize: 14.5, lineHeight: 19, fontWeight: "700", letterSpacing: -0.1, color: "#101418" },
+  hitHeadline: { marginTop: 2, fontSize: 14, lineHeight: 18, fontWeight: "700", letterSpacing: -0.1, color: "#101418" },
   footnote: { marginTop: 8, fontSize: 11.5, lineHeight: 16, color: "#8A929A" },
 
   worldModule: { overflow: "hidden", borderWidth: 1, borderColor: "#DDE1E5", borderRadius: 14, backgroundColor: "#FFFFFF" },
-  worldMap: { width: "100%", height: 150, backgroundColor: "#F2EFE7" },
-  worldMapTight: { height: 138 },
-  worldRow: { minHeight: 84, paddingVertical: 13, paddingHorizontal: 15, flexDirection: "row", alignItems: "center", columnGap: 12 },
+  worldMap: { width: "100%", height: 132, backgroundColor: "#F2EFE7" },
+  worldMapTight: { height: 122 },
+  worldRow: { minHeight: 76, paddingVertical: 13, paddingHorizontal: 15, flexDirection: "row", alignItems: "center", columnGap: 12 },
   worldDivider: { position: "absolute", left: 15, right: 0, bottom: 0, height: 1, backgroundColor: "#E7E9EC" },
   worldMeta: { fontSize: 10.5, lineHeight: 14, fontWeight: "700", letterSpacing: 0.3, color: "#5D6670" },
-  worldHeadline: { marginTop: 3, fontSize: 15, lineHeight: 20, fontWeight: "700", letterSpacing: -0.15, color: "#101418" },
+  worldHeadline: { marginTop: 3, fontSize: 14, lineHeight: 19, fontWeight: "700", letterSpacing: -0.15, color: "#101418" },
 });

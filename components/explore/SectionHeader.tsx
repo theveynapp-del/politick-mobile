@@ -36,9 +36,9 @@ export function SectionHeader({
 }
 
 const styles = StyleSheet.create({
-  wrap: { marginBottom: 12 },
+  wrap: { marginBottom: 10 },
   row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
-  title: { flex: 1, minWidth: 0, fontSize: 20, lineHeight: 26, fontWeight: "700", letterSpacing: -0.3, color: "#101418" },
-  action: { fontSize: 13, lineHeight: 18, fontWeight: "600", color: "#0D5F5B" },
-  subtitle: { marginTop: 4, fontSize: 13, lineHeight: 19, fontWeight: "400", color: "#5D6670" },
+  title: { flex: 1, minWidth: 0, fontSize: 17, lineHeight: 23, fontWeight: "700", letterSpacing: -0.3, color: "#101418" },
+  action: { fontSize: 12.5, lineHeight: 17, fontWeight: "600", color: "#0D5F5B" },
+  subtitle: { marginTop: 3, fontSize: 12, lineHeight: 17, fontWeight: "400", color: "#5D6670" },
 });
