@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { Story, Representative, TopicScope, RepLevel } from "./types";
 import { stateForZip } from "./zipToState";
+import { NO_ZIP_NOTE } from "./storyMeta";
 
 /**
  * Data-access layer. Mirrors the shape of lib/mock-data.ts so the rest of
@@ -36,9 +37,7 @@ function timeAgo(iso: string): string {
 }
 
 function mapStory(row: StoryRow, zip: string): Story {
-  const zipNote =
-    row.story_zip_relevance.find((z) => z.zip === zip)?.note ??
-    "We don't have local relevance for this zip code yet.";
+  const zipNote = row.story_zip_relevance.find((z) => z.zip === zip)?.note ?? NO_ZIP_NOTE;
 
   return {
     id: row.id,

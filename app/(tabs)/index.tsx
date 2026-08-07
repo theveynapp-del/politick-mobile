@@ -2,15 +2,14 @@ import { useState, useEffect, useCallback } from "react";
 import { View, ScrollView, StyleSheet, Pressable, Image, ActivityIndicator, useWindowDimensions } from "react-native";
 import { Text } from "@/components/Text";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import { Bell, Bookmark } from "lucide-react-native";
+import { Bell } from "lucide-react-native";
 import { color } from "@/lib/tokens";
 import { supabase } from "@/lib/supabase";
-import { getTodayStories } from "@/lib/queries";
-import { Story, TopicScope } from "@/lib/types";
-import { StoryPlaceholder } from "@/components/StoryPlaceholder";
-import { topicImageFor } from "@/lib/topicImages";
-import { estimateReadMinutes } from "@/lib/readTime";
+import { getTodayStories, getRepresentativesByZip } from "@/lib/queries";
+import { stateForZip } from "@/lib/zipToState";
+import { Story, TopicScope, Representative } from "@/lib/types";
+import { StoryCard } from "@/components/today/StoryCard";
+import { YourReps } from "@/components/today/YourReps";
 import { getStoredZip, getStoredName } from "@/lib/onboarding";
 import { getSavedIds, toggleSavedId } from "@/lib/savedStories";
 
@@ -20,6 +19,8 @@ const FILTERS: (TopicScope | "All")[] = ["All", "Local", "State", "Federal", "Wo
 function greetingFor(name: string | null) {
   const h = new Date().getHours();
   const base = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+  // Onboarding doesn't capture a name, so this is normally null. An
+  // unpersonalised greeting is correct — never invent one.
   return name ? `${base}, ${name}.` : `${base}.`;
 }
 
@@ -27,111 +28,28 @@ function dateLabel() {
   return new Date().toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
 }
 
-/**
- * Feed card, scoped to this screen. The shared StoryCard is still used by
- * Saved and Explore, which haven't been through a fidelity pass yet —
- * restyling it here would silently change those screens too.
- */
-function TodayStoryCard({
-  story,
-  saved,
-  onToggleSave,
-  tight,
-}: {
-  story: Story;
-  saved: boolean;
-  onToggleSave: () => void;
-  tight: boolean;
-}) {
-  const router = useRouter();
-  const imageSize = tight ? 96 : 105;
-
-  // Three tiers, most specific first: the story's own photograph, then a
-  // real photo for its topic, then the Politick placeholder — which reads as
-  // branding rather than pretending to be a photograph of anything.
-  const [remoteFailed, setRemoteFailed] = useState(false);
-  const remote = !remoteFailed && story.imageUrl ? story.imageUrl : null;
-  const topical = remote ? null : topicImageFor(story.topic);
-
-  return (
-    <Pressable
-      onPress={() => router.push(`/story/${story.id}`)}
-      style={[styles.storyCard, tight && styles.storyCardTight]}
-      // "link", not "button": the card contains its own bookmark button, and
-      // RN Web renders role=button as a real <button>, which cannot legally
-      // nest another one.
-      accessibilityRole="link"
-      accessibilityLabel={story.headline}
-    >
-      <View style={styles.storyTopRow}>
-        <Text style={styles.storyMetadata}>
-          {story.scope.toUpperCase()} · {estimateReadMinutes(story)} min read
-        </Text>
-        <Pressable
-          onPress={(e) => {
-            e.stopPropagation();
-            onToggleSave();
-          }}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityState={{ selected: saved }}
-          accessibilityLabel={saved ? `Remove ${story.headline} from saved` : `Save ${story.headline}`}
-          style={styles.bookmarkButton}
-        >
-          <Bookmark
-            size={23}
-            color="#252B30"
-            strokeWidth={1.8}
-            fill={saved ? "#252B30" : "none"}
-          />
-        </Pressable>
-      </View>
-
-      <View style={styles.storyContent}>
-        <View style={styles.storyText}>
-          <Text style={styles.storyHeadline}>{story.headline}</Text>
-          <Text style={styles.storySummary} numberOfLines={3}>
-            {story.whatHappened}
-          </Text>
-        </View>
-
-        {remote ? (
-          <Image
-            source={{ uri: remote }}
-            style={[styles.storyImage, { width: imageSize, height: imageSize }]}
-            onError={() => setRemoteFailed(true)}
-            accessibilityLabel={`Photograph accompanying: ${story.headline}`}
-          />
-        ) : topical ? (
-          <Image
-            source={topical}
-            style={[styles.storyImage, { width: imageSize, height: imageSize }]}
-            accessibilityLabel={`${story.topic} — illustrative photograph`}
-          />
-        ) : (
-          <StoryPlaceholder style={[styles.storyImage, { width: imageSize, height: imageSize }]} />
-        )}
-      </View>
-    </Pressable>
-  );
-}
-
 export default function TodayScreen() {
-  const router = useRouter();
   const [filter, setFilter] = useState<TopicScope | "All">("All");
   const [name, setName] = useState<string | null>(null);
   const [stories, setStories] = useState<Story[]>([]);
+  const [reps, setReps] = useState<Representative[]>([]);
+  const [stateName, setStateName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState<Record<string, boolean>>({});
 
   const { width } = useWindowDimensions();
   const tight = width <= 380;
+  const gutter = tight ? 16 : 20;
 
   const load = useCallback(async (zipValue: string) => {
     setLoading(true);
+    setStateName(stateForZip(zipValue));
     const fresh = await getTodayStories(supabase, zipValue);
     setStories(fresh);
     setLoading(false);
+    // Resolving reps can hit the lookup edge function, which is slow on a
+    // cold ZIP. Kept off the stories' critical path so the feed isn't held up.
+    getRepresentativesByZip(supabase, zipValue).then(setReps);
   }, []);
 
   useEffect(() => {
@@ -147,15 +65,12 @@ export default function TodayScreen() {
 
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
-      <ScrollView
-        contentContainerStyle={styles.scrollArea}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={[styles.header, tight && styles.gutterTight]}>
+      <ScrollView contentContainerStyle={styles.scrollArea} showsVerticalScrollIndicator={false}>
+        <View style={{ paddingHorizontal: gutter }}>
           <View style={styles.brandRow}>
-            {/* The approved lockup asset, not text — keeps the emblem
-                geometry, gold dots and letterforms identical to onboarding
-                rather than approximating them with a system font. */}
+            {/* The approved lockup asset, not text — keeps the emblem geometry,
+                gold dot and letterforms identical to onboarding rather than
+                approximating them with a system font. */}
             <Image
               source={require("@/assets/politick-logo-lockup.png")}
               style={styles.wordmark}
@@ -173,22 +88,24 @@ export default function TodayScreen() {
           </View>
 
           <View style={styles.greetingBlock}>
-            <Text style={styles.greeting}>{greetingFor(name)}</Text>
+            <Text style={styles.greeting} accessibilityRole="header">
+              {greetingFor(name)}
+            </Text>
             <Text style={styles.date}>{dateLabel()}</Text>
           </View>
-        </View>
 
-        <View style={[styles.dailyFiveSection, tight && styles.gutterTight]}>
-          <View style={styles.dailyFiveHeadingRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.dailyFiveTitle}>Your Daily 5</Text>
+          <View style={styles.dailyFive}>
+            <Text style={styles.dailyFiveTitle} accessibilityRole="header">
+              Your Daily 5
+            </Text>
+            <View style={styles.dailyFiveRow}>
               <Text style={styles.dailyFiveSupporting}>
                 {dailyFive.length} important {dailyFive.length === 1 ? "story" : "stories"}. 5 minutes.
               </Text>
+              <Text style={styles.progressStatus}>
+                {readCount} of {dailyFive.length} read
+              </Text>
             </View>
-            <Text style={styles.progressStatus}>
-              {readCount} of {dailyFive.length} read
-            </Text>
           </View>
 
           <View
@@ -200,7 +117,7 @@ export default function TodayScreen() {
             <View style={[styles.progressValue, { width: `${progressPct}%` }]} />
           </View>
 
-          <View style={[styles.topicFilters, tight && styles.topicFiltersTight]}>
+          <View style={[styles.filters, tight && styles.filtersTight]}>
             {FILTERS.map((f) => {
               const selected = filter === f;
               return (
@@ -209,9 +126,9 @@ export default function TodayScreen() {
                   onPress={() => setFilter(f)}
                   accessibilityRole="button"
                   accessibilityState={{ selected }}
-                  style={[styles.topicChip, tight && styles.topicChipTight, selected && styles.topicChipSelected]}
+                  style={[styles.chip, tight && styles.chipTight, selected && styles.chipSelected]}
                 >
-                  <Text style={[styles.topicChipText, selected && styles.topicChipTextSelected]}>{f}</Text>
+                  <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{f}</Text>
                 </Pressable>
               );
             })}
@@ -224,7 +141,7 @@ export default function TodayScreen() {
               <Text style={styles.emptyText}>No stories in this category yet — check back soon.</Text>
             ) : (
               dailyFive.map((story) => (
-                <TodayStoryCard
+                <StoryCard
                   key={story.id}
                   story={story}
                   tight={tight}
@@ -238,6 +155,10 @@ export default function TodayScreen() {
             )}
           </View>
         </View>
+
+        {/* Outside the gutter wrapper: the strip scrolls edge to edge, with the
+            gutter applied to its content instead. */}
+        <YourReps reps={reps} stateName={stateName} gutter={gutter} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -245,72 +166,48 @@ export default function TodayScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: color.light.canvas },
-  // Clears the fixed bottom tab bar so the last card is never stranded behind it.
+  // Clears the fixed bottom tab bar so the reps strip is never stranded behind it.
   scrollArea: { paddingBottom: 96 },
-  gutterTight: { paddingHorizontal: 20 },
 
-  header: { paddingHorizontal: 24, paddingTop: 18 },
-  brandRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  // 132x38 preserves the lockup's 1000:287 aspect ratio at roughly the 36px
-  // cap-height the spec calls for.
-  wordmark: { width: 132, height: 38 },
-  iconButton: { width: 44, height: 44, alignItems: "center", justifyContent: "center", marginRight: -10 },
+  brandRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop: 14 },
+  // 153x44 keeps the lockup's 1000:287 aspect ratio at the spec's 42-46px height.
+  wordmark: { width: 153, height: 44 },
+  iconButton: { width: 44, height: 44, alignItems: "flex-end", justifyContent: "center" },
 
   greetingBlock: { marginTop: 24 },
-  greeting: { fontSize: 20, lineHeight: 26, fontWeight: "600", letterSpacing: -0.2, color: "#101418" },
-  date: { marginTop: 3, fontSize: 13, lineHeight: 18, fontWeight: "400", color: "#5D6670" },
+  greeting: { fontSize: 28, lineHeight: 34, fontWeight: "700", letterSpacing: -0.45, color: "#101418" },
+  date: { marginTop: 4, fontSize: 16, lineHeight: 22, fontWeight: "400", color: "#5D6670" },
 
-  dailyFiveSection: { paddingHorizontal: 24, paddingTop: 26 },
-  dailyFiveHeadingRow: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 16 },
-  dailyFiveTitle: { fontSize: 24, lineHeight: 30, fontWeight: "700", letterSpacing: -0.4, color: "#101418" },
-  dailyFiveSupporting: { marginTop: 4, fontSize: 14, lineHeight: 20, fontWeight: "500", color: "#252B30" },
-  progressStatus: { paddingBottom: 1, fontSize: 14, lineHeight: 20, fontWeight: "600", color: "#252B30" },
+  dailyFive: { marginTop: 38 },
+  dailyFiveTitle: { fontSize: 32, lineHeight: 38, fontWeight: "700", letterSpacing: -0.6, color: "#101418" },
+  dailyFiveRow: { marginTop: 4, flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 12 },
+  dailyFiveSupporting: { flex: 1, minWidth: 0, fontSize: 17, lineHeight: 24, fontWeight: "500", color: "#252B30" },
+  progressStatus: { fontSize: 16, lineHeight: 22, fontWeight: "600", color: "#252B30" },
 
-  progressTrack: { marginTop: 13, height: 7, borderRadius: 999, overflow: "hidden", backgroundColor: "#E6E3DC" },
+  progressTrack: { marginTop: 14, height: 7, borderRadius: 999, overflow: "hidden", backgroundColor: "#E6E3DC" },
   progressValue: { height: "100%", borderRadius: 999, backgroundColor: "#167D79" },
 
-  topicFilters: { marginTop: 23, flexDirection: "row", gap: 10 },
-  topicFiltersTight: { gap: 8 },
-  topicChip: {
-    height: 42,
-    // Spec asks for 16-18px padding *and* all five chips on one row at 390px,
-    // which don't hold together: at 16px they measure 379px inside a 342px
-    // gutter and clip "World". Fitting on one row is the acceptance criterion,
-    // so the padding gives way.
+  filters: { marginTop: 22, flexDirection: "row", gap: 8 },
+  filtersTight: { gap: 6 },
+  chip: {
+    height: 40,
+    // Spec asks for 15-17px padding *and* all five chips on one row at 390px.
+    // Those don't hold together: at 15px they overrun the 350px content width
+    // and "World" clips. One row is the stated acceptance criterion, so the
+    // padding gives way.
     paddingHorizontal: 12,
     borderRadius: 999,
-    backgroundColor: "#EEE9DE",
+    borderWidth: 1,
+    borderColor: "#DDE1E5",
+    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
   },
-  topicChipTight: { paddingHorizontal: 10 },
-  topicChipSelected: { backgroundColor: "#0D5F5B" },
-  topicChipText: { fontSize: 14, lineHeight: 18, fontWeight: "600", color: "#252B30" },
-  topicChipTextSelected: { color: "#FFFFFF" },
+  chipTight: { paddingHorizontal: 9 },
+  chipSelected: { backgroundColor: "#0D5F5B", borderColor: "#0D5F5B" },
+  chipText: { fontSize: 14, lineHeight: 18, fontWeight: "600", color: "#252B30" },
+  chipTextSelected: { color: "#FFFFFF" },
 
-  storyList: { marginTop: 24, gap: 15 },
-  storyCard: {
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#DDE1E5",
-    borderRadius: 16,
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#101418",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  storyCardTight: { padding: 14 },
-  storyTopRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" },
-  storyMetadata: { fontSize: 11, lineHeight: 15, fontWeight: "600", letterSpacing: 0.3, color: "#5D6670" },
-  bookmarkButton: { width: 44, height: 44, alignItems: "flex-end", justifyContent: "flex-start", marginTop: -8, marginRight: -6 },
-
-  storyContent: { marginTop: 8, flexDirection: "row", alignItems: "flex-end", columnGap: 14 },
-  storyText: { flex: 1, minWidth: 0 },
-  storyHeadline: { fontSize: 18, lineHeight: 24, fontWeight: "700", letterSpacing: -0.2, color: "#101418" },
-  storySummary: { marginTop: 12, fontSize: 14, lineHeight: 20, fontWeight: "400", color: "#252B30" },
-  storyImage: { borderRadius: 12, backgroundColor: color.brand.softTeal },
-
+  storyList: { marginTop: 20, gap: 13 },
   emptyText: { textAlign: "center", color: "#5D6670", fontSize: 13.5, padding: 48 },
 });
