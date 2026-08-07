@@ -8,11 +8,12 @@ import {
   Image,
   ActivityIndicator,
   useWindowDimensions,
+  Linking,
 } from "react-native";
 import { Text } from "@/components/Text";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Search, Sparkles, ChevronRight } from "lucide-react-native";
+import { Search, Sparkles, ChevronRight, ExternalLink } from "lucide-react-native";
 import { stateForZip } from "@/lib/zipToState";
 import { getStoredTopics } from "@/lib/onboarding";
 import { color } from "@/lib/tokens";
@@ -22,6 +23,7 @@ import { getStoredZip } from "@/lib/onboarding";
 import { Story } from "@/lib/types";
 import { estimateReadMinutes } from "@/lib/readTime";
 import { searchExplore, ExploreSearchResult } from "@/lib/exploreSearch";
+import { searchBills, BillSearchResult } from "@/lib/billSearch";
 
 const TOPICS = ["Economy", "Housing", "Healthcare", "Tax Policy", "Immigration", "Energy"];
 const DEFAULT_ZIP = "20814";
@@ -35,6 +37,7 @@ export default function ExploreScreen() {
   const [activeQuery, setActiveQuery] = useState<string | null>(null);
   const [stateName, setStateName] = useState<string | null>(null);
   const [topics, setTopics] = useState<string[]>([]);
+  const [bills, setBills] = useState<BillSearchResult | null>(null);
 
   const { width } = useWindowDimensions();
   const tight = width <= 380;
@@ -55,7 +58,15 @@ export default function ExploreScreen() {
     setSearching(true);
     setActiveQuery(q);
     setResult(null);
-    setResult(await searchExplore(supabase, q, { state: stateName, topics }));
+    setBills(null);
+    // Two independent lanes: what we've covered, and what Congress has filed.
+    // Run together so a query with no coverage still returns the legislation.
+    const [coverage, legislation] = await Promise.all([
+      searchExplore(supabase, q, { state: stateName, topics }),
+      searchBills(supabase, q),
+    ]);
+    setResult(coverage);
+    setBills(legislation);
     setSearching(false);
   };
 
@@ -63,6 +74,7 @@ export default function ExploreScreen() {
     setQuery("");
     setActiveQuery(null);
     setResult(null);
+    setBills(null);
   };
 
   // The reference shows a fixed "Trade talks" headline; this uses the newest
@@ -164,6 +176,41 @@ export default function ExploreScreen() {
                     <ChevronRight size={18} color="#5D6670" strokeWidth={1.9} />
                   </Pressable>
                 ))}
+              </View>
+            ) : null}
+
+            {/* Federal legislation straight from the official record. Shown
+                even when we have no story about it — the bill exists whether
+                or not we've covered it. */}
+            {!searching && bills && bills.bills.length > 0 ? (
+              <View style={styles.hits}>
+                <Text style={styles.hitsHeading}>Bills in Congress</Text>
+                {bills.bills.map((b) => (
+                  <Pressable
+                    key={`${b.congress}-${b.type}-${b.number}`}
+                    onPress={() => Linking.openURL(b.url)}
+                    accessibilityRole="link"
+                    accessibilityLabel={`${b.citation}, ${b.title}. Opens congress.gov.`}
+                    style={styles.hit}
+                  >
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={styles.hitScope}>
+                        {b.citation} · {b.congress}TH CONGRESS
+                      </Text>
+                      <Text style={styles.hitHeadline} numberOfLines={2}>
+                        {b.title}
+                      </Text>
+                      {b.latestAction ? (
+                        <Text style={styles.billAction} numberOfLines={2}>
+                          {b.latestActionDate ? `${b.latestActionDate} — ` : ""}
+                          {b.latestAction}
+                        </Text>
+                      ) : null}
+                    </View>
+                    <ExternalLink size={17} color="#5D6670" strokeWidth={1.9} />
+                  </Pressable>
+                ))}
+                <Text style={styles.billsFootnote}>Source: congress.gov</Text>
               </View>
             ) : null}
           </View>
@@ -275,6 +322,8 @@ const styles = StyleSheet.create({
   },
   hitScope: { fontSize: 10.5, lineHeight: 14, fontWeight: "700", letterSpacing: 0.3, color: "#5D6670" },
   hitHeadline: { marginTop: 2, fontSize: 14.5, lineHeight: 19, fontWeight: "700", letterSpacing: -0.1, color: "#101418" },
+  billAction: { marginTop: 4, fontSize: 12, lineHeight: 16, fontWeight: "400", color: "#5D6670" },
+  billsFootnote: { marginTop: 8, fontSize: 11.5, lineHeight: 16, color: "#8A929A" },
 
   worldSection: { marginTop: 36 },
   // Map and story share one bordered container so they read as a single module.
