@@ -6,11 +6,12 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { ChevronLeft, Bookmark, Share2 } from "lucide-react-native";
 import { color, radius } from "@/lib/tokens";
 import { supabase } from "@/lib/supabase";
-import { getTodayStories } from "@/lib/queries";
+import { getStoryById } from "@/lib/queries";
 import { Story } from "@/lib/types";
 import { storyImages } from "@/lib/storyImages";
 import { StoryPlaceholder } from "@/components/StoryPlaceholder";
 import { getSavedIds, toggleSavedId } from "@/lib/savedStories";
+import { getStoredZip } from "@/lib/onboarding";
 
 export default function StoryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -20,9 +21,11 @@ export default function StoryDetailScreen() {
   const [story, setStory] = useState<Story | null>(null);
 
   useEffect(() => {
-    getTodayStories(supabase, "20814").then((all) => {
-      setStory(all.find((s) => s.id === id) ?? null);
-    });
+    // Fetched by id, not filtered out of the feed: the feed is scoped to the
+    // reader's own state, so a story from anywhere else came back empty.
+    getStoredZip().then(async (stored) =>
+      setStory(await getStoryById(supabase, id, stored && stored.length === 5 ? stored : "20814"))
+    );
     if (id) getSavedIds().then((ids) => setSaved(ids.includes(id)));
   }, [id]);
 

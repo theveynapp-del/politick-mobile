@@ -11,6 +11,9 @@ export interface Source {
   label: string;
   type: SourceType;
   domain: string;
+  /** Link to the document itself. Null where the source is cited but we have
+   *  no stable public URL for it — the row then isn't presented as tappable. */
+  url: string | null;
 }
 
 export interface StoryMap {

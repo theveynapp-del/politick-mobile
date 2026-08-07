@@ -23,7 +23,7 @@ interface StoryRow {
   fiscal_note: string;
   state: string | null;
   image_url: string | null;
-  sources: { label: string; type: Story["sources"][number]["type"]; domain: string }[];
+  sources: { label: string; type: Story["sources"][number]["type"]; domain: string; url: string | null }[];
   story_zip_relevance: { zip: string; note: string }[];
 }
 
@@ -69,7 +69,7 @@ export async function getTodayStories(
     .select(
       `id, topic, scope, updated_at, headline, what_happened, why_it_matters,
        status, sponsor, cosponsors, next_checkpoint, fiscal_note, state, image_url,
-       sources ( label, type, domain ),
+       sources ( label, type, domain, url ),
        story_zip_relevance ( zip, note )`
     )
     .order("updated_at", { ascending: false });
@@ -89,6 +89,29 @@ export async function getTodayStories(
   );
 
   return rows.map((row) => mapStory(row, zip));
+}
+
+const STORY_SELECT = `id, topic, scope, updated_at, headline, what_happened, why_it_matters,
+   status, sponsor, cosponsors, next_checkpoint, fiscal_note, state, image_url,
+   sources ( label, type, domain, url ),
+   story_zip_relevance ( zip, note )`;
+
+/**
+ * A single story by id. Detail screens can't go through getTodayStories: that
+ * filters to the reader's own state, so a story opened from a link or from a
+ * different ZIP would come back empty.
+ */
+export async function getStoryById(
+  supabase: SupabaseClient,
+  id: string,
+  zip: string
+): Promise<Story | null> {
+  const { data, error } = await supabase.from("stories").select(STORY_SELECT).eq("id", id).maybeSingle();
+  if (error || !data) {
+    if (error) console.error("getStoryById failed:", error.message);
+    return null;
+  }
+  return mapStory(data as unknown as StoryRow, zip);
 }
 
 export interface ZipLocation {

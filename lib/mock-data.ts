@@ -21,9 +21,9 @@ export const todayStories: Story[] = [
       fiscalNote: "$142B over 10 years (CBO)",
     },
     sources: [
-      { label: "Bill text · HR 4821", type: "Primary source", domain: "congress.gov" },
-      { label: "CBO cost estimate", type: "Official data", domain: "cbo.gov" },
-      { label: "Committee vote coverage", type: "Reporting", domain: "reuters.com" },
+      { label: "Bill text · HR 4821", type: "Primary source", domain: "congress.gov", url: null },
+      { label: "CBO cost estimate", type: "Official data", domain: "cbo.gov", url: null },
+      { label: "Committee vote coverage", type: "Reporting", domain: "reuters.com", url: null },
     ],
   },
   {
@@ -46,9 +46,9 @@ export const todayStories: Story[] = [
       fiscalNote: "Not yet scored",
     },
     sources: [
-      { label: "Bill text · S 2210", type: "Primary source", domain: "congress.gov" },
-      { label: "PAC spending disclosure", type: "Official data", domain: "opensecrets.org" },
-      { label: "Colorado's similar law (2024)", type: "Official data", domain: "leg.colorado.gov" },
+      { label: "Bill text · S 2210", type: "Primary source", domain: "congress.gov", url: null },
+      { label: "PAC spending disclosure", type: "Official data", domain: "opensecrets.org", url: null },
+      { label: "Colorado's similar law (2024)", type: "Official data", domain: "leg.colorado.gov", url: null },
     ],
   },
   {
@@ -71,8 +71,8 @@ export const todayStories: Story[] = [
       fiscalNote: "Not yet scored",
     },
     sources: [
-      { label: "Bill text · HR 5590", type: "Primary source", domain: "congress.gov" },
-      { label: "NFIB statement of support", type: "Reporting", domain: "nfib.com" },
+      { label: "Bill text · HR 5590", type: "Primary source", domain: "congress.gov", url: null },
+      { label: "NFIB statement of support", type: "Reporting", domain: "nfib.com", url: null },
     ],
   },
   {
@@ -95,9 +95,9 @@ export const todayStories: Story[] = [
       fiscalNote: "TSM -2.1% on the news",
     },
     sources: [
-      { label: "Taiwan MND press release", type: "Primary source", domain: "mnd.gov.tw" },
-      { label: "Market reaction coverage", type: "Reporting", domain: "reuters.com" },
-      { label: "ChinaPower tracker", type: "Nonpartisan analysis", domain: "csis.org" },
+      { label: "Taiwan MND press release", type: "Primary source", domain: "mnd.gov.tw", url: null },
+      { label: "Market reaction coverage", type: "Reporting", domain: "reuters.com", url: null },
+      { label: "ChinaPower tracker", type: "Nonpartisan analysis", domain: "csis.org", url: null },
     ],
   },
   {
@@ -120,9 +120,9 @@ export const todayStories: Story[] = [
       fiscalNote: "Displaces US soy/beef market share in the EU",
     },
     sources: [
-      { label: "European Commission text", type: "Primary source", domain: "ec.europa.eu" },
-      { label: "Copa-Cogeca statement", type: "Reporting", domain: "copa-cogeca.eu" },
-      { label: "Deal terms coverage", type: "Reporting", domain: "ft.com" },
+      { label: "European Commission text", type: "Primary source", domain: "ec.europa.eu", url: null },
+      { label: "Copa-Cogeca statement", type: "Reporting", domain: "copa-cogeca.eu", url: null },
+      { label: "Deal terms coverage", type: "Reporting", domain: "ft.com", url: null },
     ],
   },
 ];
