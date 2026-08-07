@@ -258,7 +258,24 @@ async function syncCicero(zip: string) {
   const data = await res.json();
   if (data.response?.errors?.length) return;
 
-  const officials = data.response?.results?.officials ?? data.response?.results?.candidates?.[0]?.officials ?? [];
+  const candidate = data.response?.results?.candidates?.[0];
+  const officials = data.response?.results?.officials ?? candidate?.officials ?? [];
+
+  // The geocode candidate names the place this ZIP actually is. Persisted so
+  // the app can show "Bethesda, MD" rather than just the state, which is all
+  // the ZIP-prefix table can tell it.
+  if (candidate?.match_city && candidate?.match_region) {
+    await supabase.from("zip_locations").upsert(
+      {
+        zip,
+        city: candidate.match_city,
+        state_abbr: candidate.match_region,
+        county: candidate.match_subregion ?? null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "zip" }
+    );
+  }
 
   const relevant = officials.filter((official: any) => {
     const districtType = official.office?.district?.district_type;

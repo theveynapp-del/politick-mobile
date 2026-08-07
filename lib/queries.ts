@@ -91,6 +91,31 @@ export async function getTodayStories(
   return rows.map((row) => mapStory(row, zip));
 }
 
+export interface ZipLocation {
+  city: string;
+  stateAbbr: string;
+  county: string | null;
+}
+
+/**
+ * Where a ZIP actually is. Populated by the representative lookup from
+ * Cicero's geocode, so it only exists for ZIPs that have been resolved —
+ * callers fall back to the state name the ZIP prefix gives.
+ */
+export async function getZipLocation(
+  supabase: SupabaseClient,
+  zip: string
+): Promise<ZipLocation | null> {
+  const { data, error } = await supabase
+    .from("zip_locations")
+    .select("city, state_abbr, county")
+    .eq("zip", zip)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return { city: data.city, stateAbbr: data.state_abbr, county: data.county };
+}
+
 interface RepRow {
   id: string;
   level: RepLevel;

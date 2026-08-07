@@ -2,10 +2,10 @@ import { useState, useEffect, useCallback } from "react";
 import { View, ScrollView, StyleSheet, Pressable, Image, ActivityIndicator, useWindowDimensions } from "react-native";
 import { Text } from "@/components/Text";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Bell } from "lucide-react-native";
+import { Bell, MapPin } from "lucide-react-native";
 import { color } from "@/lib/tokens";
 import { supabase } from "@/lib/supabase";
-import { getTodayStories, getRepresentativesByZip } from "@/lib/queries";
+import { getTodayStories, getRepresentativesByZip, getZipLocation, ZipLocation } from "@/lib/queries";
 import { stateForZip } from "@/lib/zipToState";
 import { Story, TopicScope, Representative } from "@/lib/types";
 import { StoryCard } from "@/components/today/StoryCard";
@@ -34,6 +34,8 @@ export default function TodayScreen() {
   const [stories, setStories] = useState<Story[]>([]);
   const [reps, setReps] = useState<Representative[]>([]);
   const [stateName, setStateName] = useState<string | null>(null);
+  const [zip, setZip] = useState<string | null>(null);
+  const [place, setPlace] = useState<ZipLocation | null>(null);
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState<Record<string, boolean>>({});
 
@@ -43,13 +45,20 @@ export default function TodayScreen() {
 
   const load = useCallback(async (zipValue: string) => {
     setLoading(true);
+    setZip(zipValue);
     setStateName(stateForZip(zipValue));
+    getZipLocation(supabase, zipValue).then(setPlace);
     const fresh = await getTodayStories(supabase, zipValue);
     setStories(fresh);
     setLoading(false);
     // Resolving reps can hit the lookup edge function, which is slow on a
     // cold ZIP. Kept off the stories' critical path so the feed isn't held up.
-    getRepresentativesByZip(supabase, zipValue).then(setReps);
+    getRepresentativesByZip(supabase, zipValue).then((resolved) => {
+      setReps(resolved);
+      // A cold ZIP has no location row until the lookup runs — that call is
+      // what creates it, so re-read once it has finished.
+      getZipLocation(supabase, zipValue).then((p) => p && setPlace(p));
+    });
   }, []);
 
   useEffect(() => {
@@ -62,6 +71,14 @@ export default function TodayScreen() {
   const dailyFive = visible.slice(0, 5);
   const readCount = dailyFive.filter((s) => saved[s.id]).length;
   const progressPct = dailyFive.length ? (readCount / dailyFive.length) * 100 : 0;
+
+  // Prefer the real place name; a ZIP that hasn't been resolved yet only has
+  // the state its prefix implies, which is still better than nothing.
+  const locationLabel = place
+    ? `${place.city}, ${place.stateAbbr} · ${zip}`
+    : zip
+      ? [stateName, zip].filter(Boolean).join(" · ")
+      : null;
 
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
@@ -86,6 +103,15 @@ export default function TodayScreen() {
               <Bell size={24} color="#101418" strokeWidth={1.8} />
             </Pressable>
           </View>
+
+          {locationLabel ? (
+            <View style={styles.locationRow}>
+              <MapPin size={13} color="#5D6670" strokeWidth={2} />
+              <Text style={styles.locationText} numberOfLines={1}>
+                {locationLabel}
+              </Text>
+            </View>
+          ) : null}
 
           <View style={styles.greetingBlock}>
             <Text style={styles.greeting} accessibilityRole="header">
@@ -175,7 +201,10 @@ const styles = StyleSheet.create({
   wordmark: { width: 132, height: 38 },
   iconButton: { width: 44, height: 44, alignItems: "flex-end", justifyContent: "center" },
 
-  greetingBlock: { marginTop: 18 },
+  locationRow: { marginTop: 9, flexDirection: "row", alignItems: "center", columnGap: 5 },
+  locationText: { flex: 1, minWidth: 0, fontSize: 12.5, lineHeight: 17, fontWeight: "500", color: "#5D6670" },
+
+  greetingBlock: { marginTop: 14 },
   greeting: { fontSize: 22, lineHeight: 28, fontWeight: "700", letterSpacing: -0.35, color: "#101418" },
   date: { marginTop: 3, fontSize: 13.5, lineHeight: 18, fontWeight: "400", color: "#5D6670" },
 

@@ -166,8 +166,12 @@ const styles = StyleSheet.create({
 
   top: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 10 },
   scope: { flex: 1, fontSize: 11, lineHeight: 15, fontWeight: "700", letterSpacing: 0.2 },
-  // Pulled out of flow so the 44px target doesn't add height to the row.
-  bookmark: { width: 44, height: 44, alignItems: "flex-end", justifyContent: "flex-start", marginTop: -13, marginRight: -8, marginBottom: -24 },
+  // The 44px target is centred on the scope line and its extra height is
+  // cancelled by equal negative margins, so the row stays as tall as the
+  // text. Flush right: alignItems centres the 20px icon in the 44px box,
+  // leaving 12px of slack that -12 marginRight takes back out, which lands
+  // the icon on the content edge instead of floating inside it.
+  bookmark: { width: 44, height: 44, alignItems: "center", justifyContent: "center", marginTop: -14.5, marginBottom: -14.5, marginRight: -12 },
 
   body: { marginTop: 6, flexDirection: "row", alignItems: "flex-start", columnGap: 12 },
   bodyNoMedia: { flexDirection: "column" },
