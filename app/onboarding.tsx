@@ -240,15 +240,16 @@ export default function OnboardingScreen() {
             accessibilityLabel="Politick"
           />
           <Text style={styles.bodyMuted}>{"Understand what’s happening.\nKnow what it means for you."}</Text>
-          <View style={styles.illustrationWrap}>
-            <Image
-              source={require("@/assets/onboarding-welcome.jpg")}
-              style={styles.welcomeIllustration}
-              resizeMode="cover"
-              accessibilityLabel="People walking on a civic plaza in front of a capitol building"
-            />
+          <View style={styles.illustrationArea}>
+            <View style={styles.illustrationWrap}>
+              <Image
+                source={require("@/assets/onboarding-welcome.jpg")}
+                style={styles.welcomeIllustration}
+                resizeMode="cover"
+                accessibilityLabel="People walking on a civic plaza in front of a capitol building"
+              />
+            </View>
           </View>
-          <View style={{ flex: 1 }} />
           <Button variant="Primary" onPress={() => setStep("zip")}>
             Get Started
           </Button>
@@ -643,18 +644,25 @@ const styles = StyleSheet.create({
   // back arrow stays for navigation, inline so vertical rhythm still matches.
 
   onboardingLabel: { fontSize: 11, color: color.light.muted, fontWeight: "600", marginBottom: 12 },
-  welcomeWrap: { flex: 1, padding: 20, paddingTop: 24 },
+  // 28px matches onboarding 2, 3 and 5, so the text edge doesn't shift as
+  // you move through the flow.
+  welcomeWrap: { flex: 1, paddingHorizontal: 28, paddingTop: 24, paddingBottom: 20 },
   // 228 x 66 preserves the asset's exact 1000:287 aspect ratio, within the
   // spec's 220–235px lockup width.
   welcomeLogo: { width: 228, height: 66, marginTop: 2, marginBottom: 14 },
   eyebrow: { fontSize: 11, fontWeight: "800", letterSpacing: 1.2, color: color.brand.deepTeal },
   h1: { fontSize: 30, fontWeight: "800", color: color.light.ink, marginTop: 8, marginBottom: 10, letterSpacing: -0.5 },
   bodyMuted: { fontSize: 15.5, color: color.light.muted, lineHeight: 22 },
-  // Full-bleed within the page's 20px padding. The 4:3 ratio lives on the
-  // wrapper (not the Image) — RN Web ignores aspectRatio on Image and falls
-  // back to the asset's intrinsic 900px height, which letterboxes the art
-  // and pushes the CTAs off-screen.
-  illustrationWrap: { marginTop: 28, marginHorizontal: -20, aspectRatio: 4 / 3 },
+  // Centred in whatever space is left between the copy and the buttons. It
+  // used to sit directly under the copy with a flex spacer beneath, which put
+  // the whole gap in one place and read as an unfinished screen.
+  illustrationArea: { flex: 1, justifyContent: "center", marginTop: 24, marginBottom: 8 },
+  // Inset to the page gutter rather than bled to the edges: full-bleed made it
+  // the only element on the screen not sharing a left edge with the rest.
+  // The 4:3 ratio lives on the wrapper (not the Image) — RN Web ignores
+  // aspectRatio on Image and falls back to the asset's intrinsic 900px height,
+  // which letterboxes the art and pushes the CTAs off-screen.
+  illustrationWrap: { width: "100%", aspectRatio: 4 / 3, borderRadius: 16, overflow: "hidden" },
   welcomeIllustration: { width: "100%", height: "100%" },
   textBtn: { paddingVertical: 14, alignItems: "center" },
   textBtnLabel: { color: color.brand.deepTeal, fontWeight: "700" },
