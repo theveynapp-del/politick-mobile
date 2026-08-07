@@ -8,6 +8,8 @@ import {
   ActivityIndicator,
   Modal,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
   useWindowDimensions,
 } from "react-native";
 import { Text } from "@/components/Text";
@@ -235,7 +237,11 @@ function ChangeLocationModal({
   const valid = value.trim().length === 5;
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
-      <Pressable style={styles.modalScrim} onPress={onCancel}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <Pressable style={styles.modalScrim} onPress={onCancel}>
         <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
           <Text style={styles.modalTitle}>Change location</Text>
           <Text style={styles.modalBody}>
@@ -266,8 +272,9 @@ function ChangeLocationModal({
               <Text style={styles.modalSaveText}>Save</Text>
             </Pressable>
           </View>
+          </Pressable>
         </Pressable>
-      </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

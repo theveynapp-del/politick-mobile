@@ -657,12 +657,13 @@ const styles = StyleSheet.create({
   // used to sit directly under the copy with a flex spacer beneath, which put
   // the whole gap in one place and read as an unfinished screen.
   illustrationArea: { flex: 1, justifyContent: "center", marginTop: 24, marginBottom: 8 },
-  // Inset to the page gutter rather than bled to the edges: full-bleed made it
-  // the only element on the screen not sharing a left edge with the rest.
+  // Bled past the gutter on both sides, by preference — the art carries the
+  // screen and looks better running edge to edge. -28 cancels the wrap's
+  // padding exactly, so it reaches the screen edge and no further.
   // The 4:3 ratio lives on the wrapper (not the Image) — RN Web ignores
   // aspectRatio on Image and falls back to the asset's intrinsic 900px height,
   // which letterboxes the art and pushes the CTAs off-screen.
-  illustrationWrap: { width: "100%", aspectRatio: 4 / 3, borderRadius: 16, overflow: "hidden" },
+  illustrationWrap: { marginHorizontal: -28, aspectRatio: 4 / 3, overflow: "hidden" },
   welcomeIllustration: { width: "100%", height: "100%" },
   textBtn: { paddingVertical: 14, alignItems: "center" },
   textBtnLabel: { color: color.brand.deepTeal, fontWeight: "700" },

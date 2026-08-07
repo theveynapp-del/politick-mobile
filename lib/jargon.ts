@@ -30,7 +30,7 @@ export const JARGON: JargonTerm[] = [
     pattern: /\breferred to\b/i,
     shortDefinition: "The bill has been sent to a smaller group of lawmakers for detailed review.",
     expandedDefinition:
-      "Nearly every bill is assigned to at least one committee that specialises in its subject. The committee decides whether to examine it further. Most bills never move past this point — not because they were rejected in a vote, but because the committee simply never takes them up.",
+      "Nearly every bill is assigned to at least one committee that specializes in its subject. The committee decides whether to examine it further. Most bills never move past this point — not because they were rejected in a vote, but because the committee simply never takes them up.",
     category: "Committees",
     relatedTerms: ["markup", "hearing", "reported by"],
   },
@@ -127,18 +127,18 @@ export const JARGON: JargonTerm[] = [
   {
     term: "appropriation",
     pattern: /\bappropriat\w*/i,
-    shortDefinition: "A law that actually provides money for a programme.",
+    shortDefinition: "A law that actually provides money for a program.",
     expandedDefinition:
-      "Appropriations supply the funds. This is distinct from authorisation, which creates a programme and sets a spending ceiling. A programme can be authorised and still receive no money.",
+      "Appropriations supply the funds. This is distinct from authorization, which creates a program and sets a spending ceiling. A program can be authorised and still receive no money.",
     category: "Spending",
     relatedTerms: ["authorization", "continuing resolution"],
   },
   {
     term: "authorization",
     pattern: /\bauthoriz\w*/i,
-    shortDefinition: "A law that creates or continues a programme and sets a spending limit.",
+    shortDefinition: "A law that creates or continues a program and sets a spending limit.",
     expandedDefinition:
-      "Authorisation establishes what may exist and up to how much. Money still has to arrive through a separate appropriation, which is why authorised programmes are sometimes unfunded.",
+      "Authorization establishes what may exist and up to how much. Money still has to arrive through a separate appropriation, which is why authorised programs are sometimes unfunded.",
     category: "Spending",
     relatedTerms: ["appropriation"],
   },
@@ -226,7 +226,7 @@ export function findTerm(name: string): JargonTerm | null {
 }
 
 /**
- * The first recognised term appearing in a piece of official text — used to
+ * The first recognized term appearing in a piece of official text — used to
  * anchor a learning card to something the reader is actually looking at,
  * rather than teaching a term at random.
  */

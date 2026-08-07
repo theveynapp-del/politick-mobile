@@ -2,6 +2,8 @@ import { useEffect, useState, useCallback } from "react";
 import {
   View,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -17,6 +19,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import {
   Settings,
   ChevronRight,
+  RefreshCw,
   Pencil,
   UserRound,
   MapPin,
@@ -127,7 +130,7 @@ export default function YouScreen() {
               <Pencil size={17} color="rgba(255,255,255,0.85)" strokeWidth={2} />
             </View>
             <Text style={styles.heroSub}>
-              {email ?? (name ? "Add your email" : "Personalises your Today greeting")}
+              {email ?? (name ? "Add your email" : "Personalizes your Today greeting")}
             </Text>
           </Pressable>
         </View>
@@ -154,6 +157,13 @@ export default function YouScreen() {
                 setDraftZip(zip);
                 setEditingZip(true);
               }}
+            />
+            <Divider />
+            <Row
+              icon={RefreshCw}
+              label="Redo setup"
+              hint="Set your ZIP, topics and alerts again"
+              onPress={() => router.push("/onboarding")}
             />
             <Divider />
             <Row
@@ -324,11 +334,15 @@ function EditProfileModal({
 }) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
-      <Pressable style={styles.scrim} onPress={onCancel}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.scrimFill}
+      >
+        <Pressable style={styles.scrim} onPress={onCancel}>
         <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
           <Text style={styles.modalTitle}>Your profile</Text>
           <Text style={styles.modalBody}>
-            Your name personalises the greeting on Today. Both are stored on this device only.
+            Your name personalizes the greeting on Today. Both are stored on this device only.
           </Text>
 
           <Text style={styles.fieldLabel}>Name</Text>
@@ -363,8 +377,9 @@ function EditProfileModal({
               <Text style={styles.modalSaveText}>Save</Text>
             </Pressable>
           </View>
+          </Pressable>
         </Pressable>
-      </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -385,7 +400,11 @@ function EditZipModal({
   const valid = value.trim().length === 5;
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
-      <Pressable style={styles.scrim} onPress={onCancel}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.scrimFill}
+      >
+        <Pressable style={styles.scrim} onPress={onCancel}>
         <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
           <Text style={styles.modalTitle}>Edit ZIP code</Text>
           <Text style={styles.modalBody}>
@@ -416,8 +435,9 @@ function EditZipModal({
               <Text style={styles.modalSaveText}>Save</Text>
             </Pressable>
           </View>
+          </Pressable>
         </Pressable>
-      </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -470,6 +490,7 @@ const styles = StyleSheet.create({
   soonPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, backgroundColor: "#EEE9DE" },
   soonText: { fontSize: 11, lineHeight: 15, fontWeight: "700", color: "#8A7A55" },
 
+  scrimFill: { flex: 1 },
   scrim: { flex: 1, backgroundColor: "rgba(16,20,24,0.4)", alignItems: "center", justifyContent: "center", padding: 24 },
   modalCard: { width: "100%", maxWidth: 340, padding: 20, borderRadius: 18, backgroundColor: "#FFFFFF" },
   modalTitle: { fontSize: 18, lineHeight: 24, fontWeight: "700", color: "#101418" },
