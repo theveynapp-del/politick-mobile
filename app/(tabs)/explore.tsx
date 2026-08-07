@@ -77,9 +77,10 @@ export default function ExploreScreen() {
     setBills(null);
   };
 
-  // The reference shows a fixed "Trade talks" headline; this uses the newest
-  // real World story instead, and says so honestly when there isn't one.
-  const featured = worldStories[0] ?? null;
+  // The reference shows a single fixed "Trade talks" headline; this uses the
+  // newest real World stories instead, and says so honestly when there are
+  // none. Capped at five so the module stays a digest, not a second feed.
+  const featured = worldStories.slice(0, 5);
 
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
@@ -219,13 +220,7 @@ export default function ExploreScreen() {
         <View style={[styles.section, styles.worldSection, tight && styles.gutterTight]}>
           <Text style={styles.sectionHeading}>Around the world</Text>
 
-          <Pressable
-            style={styles.worldModule}
-            accessibilityRole="link"
-            accessibilityLabel={featured ? featured.headline : "World coverage"}
-            disabled={!featured}
-            onPress={() => featured && router.push(`/story/${featured.id}`)}
-          >
+          <View style={styles.worldModule}>
             <Image
               source={require("@/assets/explore/world-map.jpg")}
               style={[styles.worldMap, tight && styles.worldMapTight]}
@@ -233,24 +228,33 @@ export default function ExploreScreen() {
               accessibilityLabel="World map highlighting current international stories"
             />
 
-            <View style={styles.worldStoryContent}>
-              {featured ? (
-                <>
+            {featured.length === 0 ? (
+              <View style={styles.worldStoryContent}>
+                <Text style={styles.emptyWorldText}>No world coverage available right now.</Text>
+              </View>
+            ) : (
+              featured.map((story, i) => (
+                <Pressable
+                  key={story.id}
+                  onPress={() => router.push(`/story/${story.id}`)}
+                  accessibilityRole="link"
+                  accessibilityLabel={story.headline}
+                  style={styles.worldStoryContent}
+                >
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={styles.worldMetadata}>
-                      {featured.scope.toUpperCase()} · {estimateReadMinutes(featured)} MIN READ
+                      {story.scope.toUpperCase()} · {estimateReadMinutes(story)} MIN READ
                     </Text>
                     <Text style={styles.worldHeadline} numberOfLines={2}>
-                      {featured.headline}
+                      {story.headline}
                     </Text>
                   </View>
                   <ChevronRight size={21} color="#5D6670" strokeWidth={1.8} />
-                </>
-              ) : (
-                <Text style={styles.emptyWorldText}>No world coverage available right now.</Text>
-              )}
-            </View>
-          </Pressable>
+                  {i < featured.length - 1 ? <View style={styles.worldDivider} /> : null}
+                </Pressable>
+              ))
+            )}
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -337,8 +341,9 @@ const styles = StyleSheet.create({
   },
   worldMap: { width: "100%", height: 218, backgroundColor: "#F2EFE7" },
   worldMapTight: { height: 204 },
+  worldDivider: { position: "absolute", left: 15, right: 0, bottom: 0, height: 1, backgroundColor: "#E7E9EC" },
   worldStoryContent: {
-    minHeight: 104,
+    minHeight: 88,
     paddingVertical: 14,
     paddingHorizontal: 15,
     flexDirection: "row",
