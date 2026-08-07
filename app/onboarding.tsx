@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from "react";
-import { View, TextInput, Pressable, StyleSheet, ScrollView, ActivityIndicator, Switch, Alert, Image, Keyboard, useWindowDimensions } from "react-native";
+import { View, TextInput, Pressable, StyleSheet, ScrollView, ActivityIndicator, Switch, Image, Keyboard, useWindowDimensions } from "react-native";
 import { Navigation, Lock, ArrowLeft, ChevronRight, Bell, Smartphone } from "lucide-react-native";
 import { Text } from "@/components/Text";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -189,24 +189,6 @@ export default function OnboardingScreen() {
     router.replace("/(tabs)");
   };
 
-  const skipOnboarding = () => {
-    Alert.alert(
-      "Preview Today",
-      "You can finish setup any time from Profile \u2192 Redo location & topics setup. Continuing with a default ZIP for now.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Continue",
-          onPress: async () => {
-            await setStoredZip("20814");
-            await setOnboardingComplete(true);
-            router.replace("/(tabs)");
-          },
-        },
-      ]
-    );
-  };
-
   const goBack = () => {
     if (step === "zip") setStep("welcome");
     if (step === "confirm") setStep("zip");
@@ -253,9 +235,6 @@ export default function OnboardingScreen() {
           <Button variant="Primary" onPress={() => setStep("zip")}>
             Get Started
           </Button>
-          <Pressable onPress={skipOnboarding} style={styles.textBtn}>
-            <Text style={styles.textBtnLabel}>I already have an account</Text>
-          </Pressable>
         </View>
       )}
 
@@ -665,8 +644,6 @@ const styles = StyleSheet.create({
   // which letterboxes the art and pushes the CTAs off-screen.
   illustrationWrap: { marginHorizontal: -28, aspectRatio: 4 / 3, overflow: "hidden" },
   welcomeIllustration: { width: "100%", height: "100%" },
-  textBtn: { paddingVertical: 14, alignItems: "center" },
-  textBtnLabel: { color: color.brand.deepTeal, fontWeight: "700" },
 
   page: { flex: 1, padding: 20 },
 
