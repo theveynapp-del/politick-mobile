@@ -72,7 +72,9 @@ export function StoryCard({
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: color.light.surface, borderWidth: 1, borderColor: color.light.border, borderRadius: radius.card, padding: 16, marginHorizontal: 20, marginBottom: 14 },
+  // No horizontal margin: the list that renders these owns the gutter, so it
+  // can narrow on small screens instead of being pinned at 20.
+  card: { backgroundColor: color.light.surface, borderWidth: 1, borderColor: color.light.border, borderRadius: radius.card, padding: 16, marginBottom: 14 },
   topRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 },
   topic: { fontSize: 10.5, fontWeight: "800", letterSpacing: 0.4 },
   bodyRow: { flexDirection: "row", gap: 12 },

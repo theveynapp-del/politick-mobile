@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { View, StyleSheet, FlatList, ActivityIndicator } from "react-native";
+import { View, Image, StyleSheet, FlatList, ActivityIndicator, useWindowDimensions } from "react-native";
 import { Text } from "@/components/Text";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
@@ -21,6 +21,8 @@ export default function SavedScreen() {
   const [stories, setStories] = useState<Story[]>([]);
   const [savedIds, setSavedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const { width } = useWindowDimensions();
+  const gutter = width <= 380 ? 16 : 20;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -41,8 +43,18 @@ export default function SavedScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Saved</Text>
+      <View style={[styles.header, { paddingHorizontal: gutter }]}>
+        {/* The approved lockup, same treatment as Today — this is a top-level
+            destination, so it carries the brand rather than a bare title. */}
+        <Image
+          source={require("@/assets/politick-logo-lockup.png")}
+          style={styles.wordmark}
+          resizeMode="contain"
+          accessibilityLabel="Politick"
+        />
+        <Text style={styles.title} accessibilityRole="header">
+          Saved
+        </Text>
         <Text style={styles.subtitle}>Stories you&rsquo;ve bookmarked from Today.</Text>
       </View>
 
@@ -52,7 +64,7 @@ export default function SavedScreen() {
         <FlatList
           data={stories}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: 24 }}
+          contentContainerStyle={{ paddingHorizontal: gutter, paddingBottom: 100 }}
           renderItem={({ item }) => (
             <StoryCard
               story={item}
@@ -79,9 +91,11 @@ export default function SavedScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: color.light.canvas },
-  header: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16 },
-  title: { fontSize: 20, fontWeight: "700", color: color.light.ink, marginBottom: 3 },
-  subtitle: { fontSize: 13, color: color.light.muted },
+  header: { paddingTop: 14, paddingBottom: 16 },
+  // 132x38 keeps the lockup's 1000:287 ratio, matching Today.
+  wordmark: { width: 132, height: 38 },
+  title: { marginTop: 16, fontSize: 26, lineHeight: 32, fontWeight: "700", letterSpacing: -0.5, color: "#101418" },
+  subtitle: { marginTop: 3, fontSize: 13.5, lineHeight: 19, color: "#5D6670" },
   empty: { alignItems: "center", padding: 48 },
   emptyTitle: { fontSize: 14, fontWeight: "700", color: color.light.ink, marginBottom: 4 },
   emptyDesc: { fontSize: 12.5, color: color.light.muted, textAlign: "center" },

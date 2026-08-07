@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import Constants from "expo-constants";
 import { Text } from "@/components/Text";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import {
   Settings,
@@ -54,6 +54,7 @@ const DEFAULT_ZIP = "20814";
  */
 export default function YouScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const gutter = width <= 380 ? 16 : 20;
 
@@ -76,8 +77,11 @@ export default function YouScreen() {
   }, []);
 
   useEffect(() => {
-    getStoredName().then(setName);
-    getStoredEmail().then(setEmail);
+    // Normalised to null: clearing a field stores "", and ?? only guards null,
+    // so an empty string rendered as a blank line where the prompt should be.
+    const orNull = (v: string | null) => (v && v.trim() ? v : null);
+    getStoredName().then((v) => setName(orNull(v)));
+    getStoredEmail().then((v) => setEmail(orNull(v)));
     getNotificationsEnabled().then(setNotif);
     getStoredZip().then((stored) => {
       const z = stored && stored.length === 5 ? stored : DEFAULT_ZIP;
@@ -100,9 +104,9 @@ export default function YouScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <SafeAreaView style={styles.safe} edges={[]}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <View style={[styles.hero, { paddingHorizontal: gutter }]}>
+        <View style={[styles.hero, { paddingHorizontal: gutter, paddingTop: insets.top + 18 }]}>
           <Pressable
             onPress={openProfileEditor}
             hitSlop={10}
@@ -419,11 +423,14 @@ function EditZipModal({
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#12302E" },
+  // Canvas, not the hero colour: the hero paints its own dark and pays for
+  // the status-bar inset itself, so nothing dark is left behind once it
+  // scrolls away.
+  safe: { flex: 1, backgroundColor: "#F7F6F2" },
   scroll: { paddingBottom: 100, backgroundColor: "#F7F6F2" },
 
   // A darkened Deep Teal, so the panel reads as brand rather than plain black.
-  hero: { paddingTop: 18, paddingBottom: 34, backgroundColor: "#12302E" },
+  hero: { paddingBottom: 34, backgroundColor: "#12302E" },
   gear: { alignSelf: "flex-end", width: 44, height: 44, alignItems: "flex-end", justifyContent: "center" },
   heroNameRow: { flexDirection: "row", alignItems: "center", columnGap: 9 },
   heroName: { flexShrink: 1, fontSize: 26, lineHeight: 32, fontWeight: "700", letterSpacing: -0.4, color: "#FFFFFF" },
@@ -437,7 +444,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     backgroundColor: "#F7F6F2",
-    minHeight: 600,
   },
   sectionTitle: { fontSize: 17, lineHeight: 23, fontWeight: "700", letterSpacing: -0.2, color: "#101418" },
 

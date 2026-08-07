@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
   scroll: { paddingBottom: 100 },
 
   header: { paddingTop: 20 },
-  title: { fontSize: 28, lineHeight: 34, fontWeight: "700", letterSpacing: -0.5, color: "#101418" },
+  title: { fontSize: 26, lineHeight: 32, fontWeight: "700", letterSpacing: -0.5, color: "#101418" },
   locationRow: { marginTop: 8, flexDirection: "row", alignItems: "center", gap: 12 },
   location: { flex: 1, minWidth: 0, fontSize: 15, lineHeight: 21, fontWeight: "400", color: "#5D6670" },
   changeButton: {
