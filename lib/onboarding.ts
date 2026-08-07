@@ -5,7 +5,30 @@ const KEYS = {
   zip: "politick.zip",
   topics: "politick.topics",
   notificationsEnabled: "politick.notificationsEnabled",
+  name: "politick.name",
+  email: "politick.email",
 } as const;
+
+/**
+ * Display name for the greeting. There's no sign-in yet and onboarding
+ * doesn't ask for a name, so this is normally null — callers must fall back
+ * to an unpersonalised greeting rather than inventing one.
+ */
+export async function getStoredName(): Promise<string | null> {
+  return AsyncStorage.getItem(KEYS.name);
+}
+
+export async function setStoredName(name: string) {
+  await AsyncStorage.setItem(KEYS.name, name);
+}
+
+export async function getStoredEmail(): Promise<string | null> {
+  return AsyncStorage.getItem(KEYS.email);
+}
+
+export async function setStoredEmail(email: string) {
+  await AsyncStorage.setItem(KEYS.email, email);
+}
 
 export async function getOnboardingComplete(): Promise<boolean> {
   return (await AsyncStorage.getItem(KEYS.onboardingComplete)) === "true";
