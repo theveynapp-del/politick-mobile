@@ -13,6 +13,8 @@ import { Text } from "@/components/Text";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Search, Sparkles, ChevronRight } from "lucide-react-native";
+import { stateForZip } from "@/lib/zipToState";
+import { getStoredTopics } from "@/lib/onboarding";
 import { color } from "@/lib/tokens";
 import { supabase } from "@/lib/supabase";
 import { getTodayStories } from "@/lib/queries";
@@ -31,16 +33,21 @@ export default function ExploreScreen() {
   const [searching, setSearching] = useState(false);
   const [result, setResult] = useState<ExploreSearchResult | null>(null);
   const [activeQuery, setActiveQuery] = useState<string | null>(null);
+  const [stateName, setStateName] = useState<string | null>(null);
+  const [topics, setTopics] = useState<string[]>([]);
 
   const { width } = useWindowDimensions();
   const tight = width <= 380;
 
   useEffect(() => {
-    getStoredZip().then((stored) =>
-      getTodayStories(supabase, stored && stored.length === 5 ? stored : DEFAULT_ZIP).then((all) =>
+    getStoredZip().then((stored) => {
+      const zip = stored && stored.length === 5 ? stored : DEFAULT_ZIP;
+      setStateName(stateForZip(zip));
+      getTodayStories(supabase, zip).then((all) =>
         setWorldStories(all.filter((s) => s.scope === "World"))
-      )
-    );
+      );
+    });
+    getStoredTopics().then(setTopics);
   }, []);
 
   const runSearch = async (q: string) => {
@@ -48,7 +55,7 @@ export default function ExploreScreen() {
     setSearching(true);
     setActiveQuery(q);
     setResult(null);
-    setResult(await searchExplore(supabase, q));
+    setResult(await searchExplore(supabase, q, { state: stateName, topics }));
     setSearching(false);
   };
 
@@ -132,6 +139,33 @@ export default function ExploreScreen() {
                 </Text>
               )}
             </View>
+
+            {/* The answer is built from real stories, so they're listed and
+                openable rather than leaving the reader at the prose. */}
+            {!searching && result?.found && result.stories && result.stories.length > 0 ? (
+              <View style={styles.hits}>
+                <Text style={styles.hitsHeading}>In your feed</Text>
+                {result.stories.map((s) => (
+                  <Pressable
+                    key={s.id}
+                    onPress={() => router.push(`/story/${s.id}`)}
+                    accessibilityRole="link"
+                    accessibilityLabel={s.headline}
+                    style={styles.hit}
+                  >
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={styles.hitScope}>
+                        {s.scope.toUpperCase()} · {s.topic}
+                      </Text>
+                      <Text style={styles.hitHeadline} numberOfLines={2}>
+                        {s.headline}
+                      </Text>
+                    </View>
+                    <ChevronRight size={18} color="#5D6670" strokeWidth={1.9} />
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
           </View>
         )}
 
@@ -225,6 +259,22 @@ const styles = StyleSheet.create({
   clearText: { fontSize: 11.5, fontWeight: "600", color: color.light.muted },
   resultText: { fontSize: 14.5, lineHeight: 21, color: color.light.ink },
   resultEmptyText: { fontSize: 13.5, lineHeight: 19, color: color.light.muted },
+
+  hits: { marginTop: 12 },
+  hitsHeading: { fontSize: 12, lineHeight: 16, fontWeight: "700", letterSpacing: 0.3, color: "#5D6670", textTransform: "uppercase" },
+  hit: {
+    marginTop: 8,
+    padding: 13,
+    flexDirection: "row",
+    alignItems: "center",
+    columnGap: 10,
+    borderWidth: 1,
+    borderColor: "#DDE1E5",
+    borderRadius: 12,
+    backgroundColor: "#FFFFFF",
+  },
+  hitScope: { fontSize: 10.5, lineHeight: 14, fontWeight: "700", letterSpacing: 0.3, color: "#5D6670" },
+  hitHeadline: { marginTop: 2, fontSize: 14.5, lineHeight: 19, fontWeight: "700", letterSpacing: -0.1, color: "#101418" },
 
   worldSection: { marginTop: 36 },
   // Map and story share one bordered container so they read as a single module.
