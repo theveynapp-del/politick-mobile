@@ -74,11 +74,8 @@ export default function TodayScreen() {
 
   // Prefer the real place name; a ZIP that hasn't been resolved yet only has
   // the state its prefix implies, which is still better than nothing.
-  const locationLabel = place
-    ? `${place.city}, ${place.stateAbbr} · ${zip}`
-    : zip
-      ? [stateName, zip].filter(Boolean).join(" · ")
-      : null;
+  const placeLabel = place ? `${place.city}, ${place.stateAbbr}` : stateName;
+  const locationLabel = [placeLabel, zip].filter(Boolean).join(" · ") || null;
 
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
@@ -94,6 +91,24 @@ export default function TodayScreen() {
               resizeMode="contain"
               accessibilityLabel="Politick"
             />
+            {locationLabel ? (
+              <View style={styles.locationPill} accessibilityLabel={`Your location: ${locationLabel}`}>
+                <MapPin size={12} color="#5D6670" strokeWidth={2} />
+                {/* Two texts, not one: a long city ("Salt Lake City, UT") would
+                    otherwise eat the ellipsis and take the ZIP with it. Only the
+                    place name shrinks, so the ZIP always stays legible. */}
+                {placeLabel ? (
+                  <Text style={styles.locationPlace} numberOfLines={1}>
+                    {placeLabel}
+                  </Text>
+                ) : null}
+                {placeLabel && zip ? <Text style={styles.locationSep}>·</Text> : null}
+                {zip ? <Text style={styles.locationZip}>{zip}</Text> : null}
+              </View>
+            ) : (
+              <View style={{ flex: 1 }} />
+            )}
+
             <Pressable
               hitSlop={10}
               accessibilityRole="button"
@@ -103,15 +118,6 @@ export default function TodayScreen() {
               <Bell size={24} color="#101418" strokeWidth={1.8} />
             </Pressable>
           </View>
-
-          {locationLabel ? (
-            <View style={styles.locationRow}>
-              <MapPin size={13} color="#5D6670" strokeWidth={2} />
-              <Text style={styles.locationText} numberOfLines={1}>
-                {locationLabel}
-              </Text>
-            </View>
-          ) : null}
 
           <View style={styles.greetingBlock}>
             <Text style={styles.greeting} accessibilityRole="header">
@@ -195,16 +201,36 @@ const styles = StyleSheet.create({
   // Clears the fixed bottom tab bar so the reps strip is never stranded behind it.
   scrollArea: { paddingBottom: 96 },
 
-  brandRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop: 12 },
-  // 132x38 keeps the lockup's 1000:287 aspect ratio. The spec's 42-46px was
-  // sized off a wider mockup canvas and reads oversized on a real handset.
-  wordmark: { width: 132, height: 38 },
-  iconButton: { width: 44, height: 44, alignItems: "flex-end", justifyContent: "center" },
+  brandRow: { flexDirection: "row", alignItems: "center", columnGap: 10, paddingTop: 12 },
+  // 112x32 keeps the lockup's 1000:287 aspect ratio. Smaller than before so the
+  // location pill fits the header row at 375 without either being truncated;
+  // it also matches the lockup's share of width in the reference.
+  wordmark: { width: 112, height: 32 },
+  // Keeps the spec's 44px touch target while alignItems lands the 24px glyph on
+  // the gutter. The 20px of slack that leaves to the glyph's left read as a gap
+  // from the pill, so the box is pulled back over it — the pill isn't
+  // interactive, so the overlap costs nothing.
+  iconButton: { width: 44, height: 44, alignItems: "flex-end", justifyContent: "center", marginLeft: -18 },
 
-  locationRow: { marginTop: 9, flexDirection: "row", alignItems: "center", columnGap: 5 },
-  locationText: { flex: 1, minWidth: 0, fontSize: 12.5, lineHeight: 17, fontWeight: "500", color: "#5D6670" },
+  locationPill: {
+    // Pushed right so it sits beside the bell rather than trailing the lockup.
+    marginLeft: "auto",
+    flexShrink: 1,
+    height: 26,
+    paddingHorizontal: 9,
+    flexDirection: "row",
+    alignItems: "center",
+    columnGap: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#DDE1E5",
+    backgroundColor: "#FFFFFF",
+  },
+  locationPlace: { flexShrink: 1, fontSize: 11, lineHeight: 14, fontWeight: "500", color: "#41484F" },
+  locationSep: { fontSize: 11, lineHeight: 14, fontWeight: "500", color: "#8A929A" },
+  locationZip: { flexShrink: 0, fontSize: 11, lineHeight: 14, fontWeight: "500", color: "#41484F" },
 
-  greetingBlock: { marginTop: 14 },
+  greetingBlock: { marginTop: 18 },
   greeting: { fontSize: 22, lineHeight: 28, fontWeight: "700", letterSpacing: -0.35, color: "#101418" },
   date: { marginTop: 3, fontSize: 13.5, lineHeight: 18, fontWeight: "400", color: "#5D6670" },
 
