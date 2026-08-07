@@ -38,8 +38,6 @@ import {
   setStoredZip,
   getStoredName,
   setStoredName,
-  getStoredEmail,
-  setStoredEmail,
   getNotificationsEnabled,
   setNotificationsEnabled,
 } from "@/lib/onboarding";
@@ -62,7 +60,6 @@ export default function YouScreen() {
   const gutter = width <= 380 ? 16 : 20;
 
   const [name, setName] = useState<string | null>(null);
-  const [email, setEmail] = useState<string | null>(null);
   const [zip, setZip] = useState(DEFAULT_ZIP);
   const [placeLabel, setPlaceLabel] = useState<string | null>(null);
   const [notif, setNotif] = useState(true);
@@ -71,7 +68,6 @@ export default function YouScreen() {
   const [editingProfile, setEditingProfile] = useState(false);
   const [editingZip, setEditingZip] = useState(false);
   const [draftName, setDraftName] = useState("");
-  const [draftEmail, setDraftEmail] = useState("");
   const [draftZip, setDraftZip] = useState("");
 
   const loadZipPlace = useCallback(async (z: string) => {
@@ -84,7 +80,6 @@ export default function YouScreen() {
     // so an empty string rendered as a blank line where the prompt should be.
     const orNull = (v: string | null) => (v && v.trim() ? v : null);
     getStoredName().then((v) => setName(orNull(v)));
-    getStoredEmail().then((v) => setEmail(orNull(v)));
     getNotificationsEnabled().then(setNotif);
     getStoredZip().then((stored) => {
       const z = stored && stored.length === 5 ? stored : DEFAULT_ZIP;
@@ -102,9 +97,15 @@ export default function YouScreen() {
 
   const openProfileEditor = () => {
     setDraftName(name ?? "");
-    setDraftEmail(email ?? "");
     setEditingProfile(true);
   };
+
+  // Real and useful under the name, where the email used to sit. Nothing in
+  // the app consumes an email address, so collecting one implied an account
+  // that doesn't exist.
+  const heroSubline = name
+    ? [placeLabel, zip].filter(Boolean).join(" · ")
+    : "Personalizes your Today greeting";
 
   return (
     <SafeAreaView style={styles.safe} edges={[]}>
@@ -114,7 +115,7 @@ export default function YouScreen() {
             onPress={openProfileEditor}
             hitSlop={10}
             accessibilityRole="button"
-            accessibilityLabel="Edit your name and email"
+            accessibilityLabel="Edit your name"
             style={styles.gear}
           >
             <Settings size={22} color="#FFFFFF" strokeWidth={1.9} />
@@ -129,9 +130,7 @@ export default function YouScreen() {
               </Text>
               <Pencil size={17} color="rgba(255,255,255,0.85)" strokeWidth={2} />
             </View>
-            <Text style={styles.heroSub}>
-              {email ?? (name ? "Add your email" : "Personalizes your Today greeting")}
-            </Text>
+            <Text style={styles.heroSub}>{heroSubline}</Text>
           </Pressable>
         </View>
 
@@ -225,17 +224,12 @@ export default function YouScreen() {
       <EditProfileModal
         visible={editingProfile}
         name={draftName}
-        email={draftEmail}
         onChangeName={setDraftName}
-        onChangeEmail={setDraftEmail}
         onCancel={() => setEditingProfile(false)}
         onSave={async () => {
           const n = draftName.trim();
-          const e = draftEmail.trim();
           await setStoredName(n);
-          await setStoredEmail(e);
           setName(n || null);
-          setEmail(e || null);
           setEditingProfile(false);
         }}
       />
@@ -318,17 +312,13 @@ function Row({
 function EditProfileModal({
   visible,
   name,
-  email,
   onChangeName,
-  onChangeEmail,
   onCancel,
   onSave,
 }: {
   visible: boolean;
   name: string;
-  email: string;
   onChangeName: (v: string) => void;
-  onChangeEmail: (v: string) => void;
   onCancel: () => void;
   onSave: () => void;
 }) {
@@ -339,44 +329,32 @@ function EditProfileModal({
         style={styles.scrimFill}
       >
         <Pressable style={styles.scrim} onPress={onCancel}>
-        <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
-          <Text style={styles.modalTitle}>Your profile</Text>
-          <Text style={styles.modalBody}>
-            Your name personalizes the greeting on Today. Both are stored on this device only.
-          </Text>
+          <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
+            <Text style={styles.modalTitle}>Your name</Text>
+            <Text style={styles.modalBody}>
+              Used to greet you on Today. Stored on this device only — Politick has no account
+              to sign in to.
+            </Text>
 
-          <Text style={styles.fieldLabel}>Name</Text>
-          <TextInput
-            value={name}
-            onChangeText={onChangeName}
-            placeholder="First name"
-            placeholderTextColor="#8A929A"
-            autoCapitalize="words"
-            autoFocus
-            accessibilityLabel="Name"
-            style={styles.input}
-          />
+            <TextInput
+              value={name}
+              onChangeText={onChangeName}
+              placeholder="First name"
+              placeholderTextColor="#8A929A"
+              autoCapitalize="words"
+              autoFocus
+              accessibilityLabel="Name"
+              style={[styles.input, { marginTop: 14 }]}
+            />
 
-          <Text style={styles.fieldLabel}>Email (optional)</Text>
-          <TextInput
-            value={email}
-            onChangeText={onChangeEmail}
-            placeholder="you@example.com"
-            placeholderTextColor="#8A929A"
-            autoCapitalize="none"
-            keyboardType="email-address"
-            accessibilityLabel="Email"
-            style={styles.input}
-          />
-
-          <View style={styles.modalActions}>
-            <Pressable onPress={onCancel} accessibilityRole="button" style={styles.modalCancel}>
-              <Text style={styles.modalCancelText}>Cancel</Text>
-            </Pressable>
-            <Pressable onPress={onSave} accessibilityRole="button" style={styles.modalSave}>
-              <Text style={styles.modalSaveText}>Save</Text>
-            </Pressable>
-          </View>
+            <View style={styles.modalActions}>
+              <Pressable onPress={onCancel} accessibilityRole="button" style={styles.modalCancel}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable onPress={onSave} accessibilityRole="button" style={styles.modalSave}>
+                <Text style={styles.modalSaveText}>Save</Text>
+              </Pressable>
+            </View>
           </Pressable>
         </Pressable>
       </KeyboardAvoidingView>
@@ -495,7 +473,6 @@ const styles = StyleSheet.create({
   modalCard: { width: "100%", maxWidth: 340, padding: 20, borderRadius: 18, backgroundColor: "#FFFFFF" },
   modalTitle: { fontSize: 18, lineHeight: 24, fontWeight: "700", color: "#101418" },
   modalBody: { marginTop: 6, fontSize: 13.5, lineHeight: 19, color: "#5D6670" },
-  fieldLabel: { marginTop: 14, fontSize: 12.5, lineHeight: 17, fontWeight: "600", color: "#41484F" },
   input: {
     marginTop: 6,
     height: 48,
