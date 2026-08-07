@@ -29,6 +29,11 @@ export interface Story {
   headline: string;
   whatHappened: string;
   whyItMatters: string;
+  /**
+   * The story's own photograph, when its source publishes one (news articles
+   * do; bill trackers don't). Null means fall back to topic imagery.
+   */
+  imageUrl: string | null;
   zipNote: string;
   storyMap: StoryMap;
   sources: Source[];

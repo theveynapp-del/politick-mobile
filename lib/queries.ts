@@ -21,6 +21,7 @@ interface StoryRow {
   next_checkpoint: string;
   fiscal_note: string;
   state: string | null;
+  image_url: string | null;
   sources: { label: string; type: Story["sources"][number]["type"]; domain: string }[];
   story_zip_relevance: { zip: string; note: string }[];
 }
@@ -47,6 +48,7 @@ function mapStory(row: StoryRow, zip: string): Story {
     headline: row.headline,
     whatHappened: row.what_happened,
     whyItMatters: row.why_it_matters,
+    imageUrl: row.image_url,
     zipNote,
     storyMap: {
       status: row.status,
@@ -67,7 +69,7 @@ export async function getTodayStories(
     .from("stories")
     .select(
       `id, topic, scope, updated_at, headline, what_happened, why_it_matters,
-       status, sponsor, cosponsors, next_checkpoint, fiscal_note, state,
+       status, sponsor, cosponsors, next_checkpoint, fiscal_note, state, image_url,
        sources ( label, type, domain ),
        story_zip_relevance ( zip, note )`
     )

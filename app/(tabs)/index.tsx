@@ -9,7 +9,7 @@ import { supabase } from "@/lib/supabase";
 import { getTodayStories } from "@/lib/queries";
 import { Story, TopicScope } from "@/lib/types";
 import { StoryThumbnail } from "@/components/StoryThumbnail";
-import { storyImages } from "@/lib/storyImages";
+import { topicImageFor } from "@/lib/topicImages";
 import { estimateReadMinutes } from "@/lib/readTime";
 import { getStoredZip, getStoredName } from "@/lib/onboarding";
 import { getSavedIds, toggleSavedId } from "@/lib/savedStories";
@@ -44,8 +44,14 @@ function TodayStoryCard({
   tight: boolean;
 }) {
   const router = useRouter();
-  const image = storyImages[story.id];
   const imageSize = tight ? 96 : 105;
+
+  // Three tiers, most specific first: the story's own photograph, then a
+  // real photo for its topic, then an abstract mark that doesn't pretend to
+  // be a photograph of anything.
+  const [remoteFailed, setRemoteFailed] = useState(false);
+  const remote = !remoteFailed && story.imageUrl ? story.imageUrl : null;
+  const topical = remote ? null : topicImageFor(story.topic);
 
   return (
     <Pressable
@@ -89,11 +95,18 @@ function TodayStoryCard({
           </Text>
         </View>
 
-        {image ? (
+        {remote ? (
           <Image
-            source={image}
+            source={{ uri: remote }}
             style={[styles.storyImage, { width: imageSize, height: imageSize }]}
-            accessibilityLabel=""
+            onError={() => setRemoteFailed(true)}
+            accessibilityLabel={`Photograph accompanying: ${story.headline}`}
+          />
+        ) : topical ? (
+          <Image
+            source={topical}
+            style={[styles.storyImage, { width: imageSize, height: imageSize }]}
+            accessibilityLabel={`${story.topic} — illustrative photograph`}
           />
         ) : (
           <View style={[styles.storyImage, styles.storyImageFallback, { width: imageSize, height: imageSize }]}>
@@ -142,7 +155,15 @@ export default function TodayScreen() {
       >
         <View style={[styles.header, tight && styles.gutterTight]}>
           <View style={styles.brandRow}>
-            <Text style={styles.wordmark}>politick</Text>
+            {/* The approved lockup asset, not text — keeps the emblem
+                geometry, gold dots and letterforms identical to onboarding
+                rather than approximating them with a system font. */}
+            <Image
+              source={require("@/assets/politick-logo-lockup.png")}
+              style={styles.wordmark}
+              resizeMode="contain"
+              accessibilityLabel="Politick"
+            />
             <Pressable
               hitSlop={10}
               accessibilityRole="button"
@@ -232,8 +253,9 @@ const styles = StyleSheet.create({
 
   header: { paddingHorizontal: 24, paddingTop: 18 },
   brandRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  // No emblem or gold dot on this screen, per spec.
-  wordmark: { fontSize: 31, lineHeight: 36, fontWeight: "700", letterSpacing: -0.8, color: "#101418" },
+  // 132x38 preserves the lockup's 1000:287 aspect ratio at roughly the 36px
+  // cap-height the spec calls for.
+  wordmark: { width: 132, height: 38 },
   iconButton: { width: 44, height: 44, alignItems: "center", justifyContent: "center", marginRight: -10 },
 
   greetingBlock: { marginTop: 24 },

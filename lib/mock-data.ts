@@ -11,6 +11,7 @@ export const todayStories: Story[] = [
       "A House committee voted to advance a bill raising the child tax credit and shifting it to monthly payments instead of one lump sum at tax time.",
     whyItMatters:
       "If it becomes law, families with kids under 17 would see extra money in their account every month starting next year.",
+    imageUrl: null,
     zipNote: "Your representative has not co-sponsored it.",
     storyMap: {
       status: "Committee advanced",
@@ -35,6 +36,7 @@ export const todayStories: Story[] = [
       "A Senate committee voted 14-9 to advance a bill requiring companies to disclose when AI is used to screen job applicants.",
     whyItMatters:
       "Employers using AI résumé screening or interview scoring would have to tell you, and let you request a human review if you're rejected.",
+    imageUrl: null,
     zipNote: "Three employers in your metro area already follow a similar state law.",
     storyMap: {
       status: "Committee advanced",
@@ -59,6 +61,7 @@ export const todayStories: Story[] = [
       "A House member introduced a bill creating a tax credit for small businesses that invest in cybersecurity software and staff training.",
     whyItMatters:
       "If you run a small business, this could let you write off up to $10,000 in security upgrades.",
+    imageUrl: null,
     zipNote: "Your representative sits on the committee reviewing this bill.",
     storyMap: {
       status: "Introduced",
@@ -82,6 +85,7 @@ export const todayStories: Story[] = [
       "China conducted military exercises near Taiwan that were larger in scale than recent drills.",
     whyItMatters:
       "It doesn't signal imminent conflict, but it raises tension and touches shipping and chip supply chains — the kind of thing that can show up later as pricier electronics.",
+    imageUrl: null,
     zipNote: "Relevant if you hold semiconductor exposure or buy electronics regularly.",
     storyMap: {
       status: "Ongoing, 3rd exercise of this scale in 14 months",
@@ -106,6 +110,7 @@ export const todayStories: Story[] = [
       "A long-negotiated trade deal between Europe and South American countries is close to a ratification vote, despite opposition from French farmers.",
     whyItMatters:
       "If it passes, EU groceries could get slightly cheaper, and US agricultural exporters would face tougher competition in the same markets.",
+    imageUrl: null,
     zipNote: "Worth watching if you hold agricultural-sector positions or work in US ag exports.",
     storyMap: {
       status: "Ratification vote pending",
