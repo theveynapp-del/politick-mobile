@@ -15,6 +15,8 @@ import { useFocusEffect, useRouter } from "expo-router";
 import {
   Settings,
   ChevronRight,
+  Pencil,
+  UserRound,
   MapPin,
   Bell,
   Clock,
@@ -110,9 +112,14 @@ export default function YouScreen() {
           </Pressable>
 
           <Pressable onPress={openProfileEditor} accessibilityRole="button" accessibilityLabel="Edit your profile">
-            <Text style={[styles.heroName, !name && styles.heroNamePlaceholder]}>
-              {name ?? "Add your name"}
-            </Text>
+            {/* The pencil is the point: without it the name block looks like a
+                label, and nothing on the screen says it can be edited. */}
+            <View style={styles.heroNameRow}>
+              <Text style={[styles.heroName, !name && styles.heroNamePlaceholder]} numberOfLines={1}>
+                {name ?? "Add your name"}
+              </Text>
+              <Pencil size={17} color="rgba(255,255,255,0.85)" strokeWidth={2} />
+            </View>
             <Text style={styles.heroSub}>
               {email ?? (name ? "Add your email" : "Personalises your Today greeting")}
             </Text>
@@ -124,6 +131,14 @@ export default function YouScreen() {
             Your settings
           </Text>
           <View style={styles.group}>
+            <Row
+              icon={UserRound}
+              label="Your name"
+              value={name ?? "Not set"}
+              hint={name ? null : "Used to greet you on Today"}
+              onPress={openProfileEditor}
+            />
+            <Divider />
             <Row
               icon={MapPin}
               label="Edit ZIP Code"
@@ -392,7 +407,8 @@ const styles = StyleSheet.create({
   // A darkened Deep Teal, so the panel reads as brand rather than plain black.
   hero: { paddingTop: 18, paddingBottom: 34, backgroundColor: "#12302E" },
   gear: { alignSelf: "flex-end", width: 44, height: 44, alignItems: "flex-end", justifyContent: "center" },
-  heroName: { fontSize: 26, lineHeight: 32, fontWeight: "700", letterSpacing: -0.4, color: "#FFFFFF" },
+  heroNameRow: { flexDirection: "row", alignItems: "center", columnGap: 9 },
+  heroName: { flexShrink: 1, fontSize: 26, lineHeight: 32, fontWeight: "700", letterSpacing: -0.4, color: "#FFFFFF" },
   heroNamePlaceholder: { color: "rgba(255,255,255,0.75)" },
   heroSub: { marginTop: 4, fontSize: 14, lineHeight: 20, fontWeight: "400", color: "rgba(255,255,255,0.7)" },
 
