@@ -21,7 +21,7 @@
     "android": {
       "package": "app.politick.mobile",
       "adaptiveIcon": {
-        "backgroundColor": "#F7F6F2",
+        "backgroundColor": "#0C555F",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
