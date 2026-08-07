@@ -48,6 +48,12 @@ export interface Representative {
   controls: string;
   name: string;
   jurisdictionConfidence: "High" | "Needs review";
+  /**
+   * Congressional district for US House members, e.g. "MD-08" ("DE-AL" for an
+   * at-large seat). Null for every other office, and for House members whose
+   * ZIP straddles two districts — the source can't say which seat is theirs.
+   */
+  district: string | null;
   photoUrl: string | null;
   phone: string | null;
   website: string | null;

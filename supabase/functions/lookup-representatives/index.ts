@@ -160,6 +160,7 @@ async function upsertRep(
     photo_url: string | null;
     phone: string | null;
     website: string | null;
+    district?: string | null;
   },
   zip: string
 ) {
@@ -214,6 +215,17 @@ async function syncFiveCalls(zip: string) {
   const data = await res.json();
   if (data.error || !Array.isArray(data.representatives)) return;
 
+  // A split ZIP straddles two congressional districts, so the single district
+  // 5 Calls reports for it doesn't identify this member's seat. Left null in
+  // that case — the office line just reads "U.S. House" rather than naming a
+  // district that might be the wrong one.
+  // District 0 means the state has a single at-large seat, which is written
+  // "DE-AL", not "DE-00".
+  const districtLabel =
+    !data.isSplit && data.state && data.district != null
+      ? `${data.state}-${data.district === 0 ? "AL" : String(data.district).padStart(2, "0")}`
+      : null;
+
   for (const rep of data.representatives) {
     const mapping = AREA_MAP[rep.area];
     if (!mapping) continue;
@@ -228,6 +240,7 @@ async function syncFiveCalls(zip: string) {
         photo_url: rep.photoURL ?? null,
         phone: rep.phone ?? null,
         website: rep.url ?? null,
+        district: rep.area === "US House" ? districtLabel : null,
       },
       zip
     );

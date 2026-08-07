@@ -123,6 +123,7 @@ interface RepRow {
   controls: string;
   name: string;
   jurisdiction_confidence: Representative["jurisdictionConfidence"];
+  district: string | null;
   photo_url: string | null;
   phone: string | null;
   website: string | null;
@@ -166,7 +167,7 @@ async function fetchCoverage(
 ): Promise<{ reps: Representative[]; stale: boolean }> {
   const { data, error } = await supabase
     .from("rep_zip_coverage")
-    .select("source_version, representatives ( id, level, role, controls, name, jurisdiction_confidence, photo_url, phone, website )")
+    .select("source_version, representatives ( id, level, role, controls, name, jurisdiction_confidence, district, photo_url, phone, website )")
     .eq("zip", zip);
 
   if (error) {
@@ -189,6 +190,7 @@ function mapReps(rows: { representatives: RepRow }[]): Representative[] {
       controls: row.representatives.controls,
       name: row.representatives.name,
       jurisdictionConfidence: row.representatives.jurisdiction_confidence,
+      district: row.representatives.district,
       photoUrl: row.representatives.photo_url,
       phone: row.representatives.phone,
       website: row.representatives.website,
