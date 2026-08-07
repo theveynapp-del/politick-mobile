@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import {
   View,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -9,6 +10,7 @@ import {
   TextInput,
   useWindowDimensions,
 } from "react-native";
+import Constants from "expo-constants";
 import { Text } from "@/components/Text";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -186,6 +188,22 @@ export default function YouScreen() {
             <Row icon={History} label="Reading History" soon />
             <Divider />
             <Row icon={Download} label="Download History" soon />
+          </View>
+
+          {/* Footer, not header: the lockup is a dark-on-light asset and would
+              disappear against the header panel, and the header belongs to the
+              reader's identity rather than the app's. This is also where the
+              version and, later, the About and legal links live. */}
+          <View style={styles.brandFooter}>
+            <Image
+              source={require("@/assets/politick-logo-lockup.png")}
+              style={styles.footerMark}
+              resizeMode="contain"
+              accessibilityLabel="Politick"
+            />
+            <Text style={styles.footerVersion}>
+              Version {Constants.expoConfig?.version ?? "—"}
+            </Text>
           </View>
         </View>
       </ScrollView>
@@ -438,6 +456,10 @@ const styles = StyleSheet.create({
   rowHint: { marginTop: 1, fontSize: 12.5, lineHeight: 17, color: "#5D6670" },
   rowValue: { fontSize: 14.5, lineHeight: 20, fontWeight: "400", color: "#5D6670" },
   divider: { height: 1, marginLeft: 46, backgroundColor: "#E7E9EC" },
+
+  brandFooter: { marginTop: 34, alignItems: "center" },
+  footerMark: { width: 100, height: 29 },
+  footerVersion: { marginTop: 8, fontSize: 12, lineHeight: 16, fontWeight: "500", color: "#8A929A" },
 
   soonPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, backgroundColor: "#EEE9DE" },
   soonText: { fontSize: 11, lineHeight: 15, fontWeight: "700", color: "#8A7A55" },
