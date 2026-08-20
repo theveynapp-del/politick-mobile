@@ -5,6 +5,7 @@ import { ISSUE_META } from "@/lib/issueIcons";
 import { BillStage, stageFromAction } from "@/lib/billStage";
 import { GovActivityItem } from "@/lib/govActivity";
 import { JargonTerm } from "@/lib/jargon";
+import { BallotOffice, daysUntilElection } from "@/lib/election";
 
 export const CARD_WIDTH = 288;
 
@@ -220,55 +221,89 @@ export function IssueChip({ label, onPress }: { label: string; onPress: () => vo
 }
 
 /**
- * Election Center fails closed. The panel, year pill and ballot artwork follow
- * the reference, but the body states actual coverage and there is no call to
- * action, because a button promising a ballot we cannot source would be the
- * one thing this module must never do.
+ * Election Center.
+ *
+ * Shows the offices on the reader's ballot and what each one decides. It shows
+ * no candidates, because we have no entitled ballot source — and a partial
+ * candidate list is worse than none. The card says so rather than implying the
+ * ballot below it is complete.
  */
 export function ElectionCenterCard({
   placeLabel,
   cycleYear,
+  ballot,
   gutter,
 }: {
   placeLabel: string | null;
   cycleYear: string;
+  ballot: BallotOffice[];
   gutter: number;
 }) {
+  const days = daysUntilElection();
+
   return (
     <View style={{ paddingHorizontal: gutter }}>
       <View style={styles.electionCard}>
-        <View style={styles.electionCopy}>
-          <View style={styles.electionTitleRow}>
-            <Text style={styles.electionTitle}>Your election center</Text>
-            <View style={styles.electionYear}>
-              <Text style={styles.electionYearText}>{cycleYear}</Text>
+        <View style={styles.electionHeader}>
+          <View style={styles.electionCopy}>
+            <View style={styles.electionTitleRow}>
+              <Text style={styles.electionTitle}>Your election center</Text>
+              <View style={styles.electionYear}>
+                <Text style={styles.electionYearText}>{cycleYear}</Text>
+              </View>
             </View>
+            {placeLabel ? (
+              <View style={styles.electionPlace}>
+                <MapPin size={13} color="#41484F" strokeWidth={2} />
+                <Text style={styles.electionPlaceText} numberOfLines={1}>
+                  {placeLabel}
+                </Text>
+              </View>
+            ) : null}
+            <Text style={styles.electionCountdown}>
+              {days > 0 ? `${days} days until Election Day, November 3` : "Election Day is today"}
+            </Text>
           </View>
 
-          {placeLabel ? (
-            <View style={styles.electionPlace}>
-              <MapPin size={13} color="#41484F" strokeWidth={2} />
-              <Text style={styles.electionPlaceText} numberOfLines={1}>
-                {placeLabel}
-              </Text>
-            </View>
-          ) : null}
-
-          <Text style={styles.electionBody}>
-            What's on your ballot, what each office controls, and key voting information.
-          </Text>
-          <Text style={styles.electionNote}>
-            Not available yet — we'll turn this on once we can source a complete ballot for your
-            area.
-          </Text>
+          <Image
+            source={require("@/assets/explore/ballot.png")}
+            style={styles.electionArt}
+            resizeMode="contain"
+            accessibilityLabel=""
+          />
         </View>
 
-        <Image
-          source={require("@/assets/explore/ballot.png")}
-          style={styles.electionArt}
-          resizeMode="contain"
-          accessibilityLabel=""
-        />
+        {ballot.length > 0 ? (
+          <View style={styles.ballotList}>
+            <Text style={styles.ballotHeading}>WHAT YOU'RE VOTING FOR</Text>
+            {ballot.map((o, i) => (
+              <View key={o.office} style={[styles.ballotRow, i > 0 && styles.ballotRowDivided]}>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={styles.ballotOffice}>{o.office}</Text>
+                  <Text style={styles.ballotSeat}>{o.seat}</Text>
+                  <Text style={styles.ballotControls}>{o.controls}</Text>
+                  <View style={styles.ballotIncumbent}>
+                    {o.incumbent?.photoUrl ? (
+                      <Image
+                        source={{ uri: o.incumbent.photoUrl }}
+                        style={styles.ballotAvatar}
+                        accessibilityLabel=""
+                      />
+                    ) : null}
+                    <Text style={styles.ballotIncumbentText} numberOfLines={1}>
+                      {o.incumbent ? `${o.incumbentNote} ${o.incumbent.name}` : o.incumbentNote}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : null}
+
+        <Text style={styles.electionNote}>
+          Candidate lists and ballot measures aren't available yet. We'll add them when we can
+          source a complete ballot for your area.
+        </Text>
       </View>
     </View>
   );
@@ -352,17 +387,14 @@ const styles = StyleSheet.create({
   issueChipText: { fontSize: 12.5, lineHeight: 17, fontWeight: "600", color: "#252B30" },
 
   electionCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    columnGap: 10,
-    paddingLeft: 15,
-    paddingVertical: 14,
+    padding: 15,
     borderWidth: 1,
     borderColor: "rgba(79,109,122,0.20)",
     borderRadius: 16,
     backgroundColor: "#EDF2F9",
     overflow: "hidden",
   },
+  electionHeader: { flexDirection: "row", alignItems: "center", columnGap: 10 },
   electionCopy: { flex: 1, minWidth: 0 },
   electionTitleRow: { flexDirection: "row", alignItems: "center", columnGap: 8 },
   electionTitle: { fontSize: 15.5, lineHeight: 20, fontWeight: "700", letterSpacing: -0.2, color: "#101418" },
@@ -370,7 +402,19 @@ const styles = StyleSheet.create({
   electionYearText: { fontSize: 11, lineHeight: 15, fontWeight: "700", color: "#3D5A78" },
   electionPlace: { marginTop: 4, flexDirection: "row", alignItems: "center", columnGap: 4 },
   electionPlaceText: { fontSize: 12, lineHeight: 16, fontWeight: "600", color: "#41484F" },
-  electionBody: { marginTop: 6, fontSize: 12.5, lineHeight: 17, color: "#41484F" },
-  electionNote: { marginTop: 6, fontSize: 11.5, lineHeight: 16, fontWeight: "500", color: "#5D6670" },
+  electionCountdown: { marginTop: 5, fontSize: 12.5, lineHeight: 17, fontWeight: "600", color: "#3D5A78" },
+
+  ballotList: { marginTop: 13, borderRadius: 12, backgroundColor: "#FFFFFF", paddingHorizontal: 13, paddingVertical: 4 },
+  ballotHeading: { marginTop: 10, fontSize: 10, lineHeight: 14, fontWeight: "700", letterSpacing: 0.5, color: "#5D6670" },
+  ballotRow: { paddingVertical: 11 },
+  ballotRowDivided: { borderTopWidth: 1, borderTopColor: "#E7E9EC" },
+  ballotOffice: { fontSize: 14, lineHeight: 19, fontWeight: "700", color: "#101418" },
+  ballotSeat: { marginTop: 1, fontSize: 12, lineHeight: 16, fontWeight: "600", color: "#3D5A78" },
+  ballotControls: { marginTop: 4, fontSize: 12, lineHeight: 17, color: "#5D6670" },
+  ballotIncumbent: { marginTop: 7, flexDirection: "row", alignItems: "center", columnGap: 6 },
+  ballotAvatar: { width: 20, height: 20, borderRadius: 10, backgroundColor: "#EEE9DE" },
+  ballotIncumbentText: { flex: 1, minWidth: 0, fontSize: 11.5, lineHeight: 16, color: "#41484F" },
+
+  electionNote: { marginTop: 11, fontSize: 11.5, lineHeight: 16, fontWeight: "500", color: "#5D6670" },
   electionArt: { width: 76, height: 94, marginRight: 2 },
 });

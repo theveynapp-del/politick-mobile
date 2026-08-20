@@ -27,6 +27,7 @@ import { getGovActivity, bioguideIdsFor, GovActivityItem } from "@/lib/govActivi
 import { detectTerm, JargonTerm } from "@/lib/jargon";
 import { defineTerm, DefinitionResult } from "@/lib/defineTerm";
 import { stageFromAction } from "@/lib/billStage";
+import { federalBallot, CYCLE_YEAR as ELECTION_CYCLE } from "@/lib/election";
 import { SectionHeader } from "@/components/explore/SectionHeader";
 import {
   GovernmentActivityCard,
@@ -42,7 +43,7 @@ import { CORE_ISSUES, EXTRA_ISSUES } from "@/lib/issueIcons";
 const DEFAULT_ZIP = "20814";
 
 /** The next federal general election. Fixed and factual, not a data claim. */
-const CYCLE_YEAR = "2026";
+const CYCLE_YEAR = ELECTION_CYCLE;
 
 export default function ExploreScreen() {
   const router = useRouter();
@@ -63,6 +64,7 @@ export default function ExploreScreen() {
 
   const [stateName, setStateName] = useState<string | null>(null);
   const [placeLabel, setPlaceLabel] = useState<string | null>(null);
+  const [stateAbbr, setStateAbbr] = useState<string | null>(null);
   const [topics, setTopics] = useState<string[]>([]);
   const [worldStories, setWorldStories] = useState<Story[]>([]);
   const [reps, setReps] = useState<Representative[]>([]);
@@ -85,9 +87,10 @@ export default function ExploreScreen() {
     getStoredZip().then(async (stored) => {
       const zip = stored && stored.length === 5 ? stored : DEFAULT_ZIP;
       setStateName(stateForZip(zip));
-      getZipLocation(supabase, zip).then((p) =>
-        setPlaceLabel(p ? `${p.city}, ${p.stateAbbr}` : stateForZip(zip))
-      );
+      getZipLocation(supabase, zip).then((p) => {
+        setPlaceLabel(p ? `${p.city}, ${p.stateAbbr}` : stateForZip(zip));
+        setStateAbbr(p?.stateAbbr ?? null);
+      });
       getTodayStories(supabase, zip).then((all) =>
         setWorldStories(all.filter((s) => s.scope === "World"))
       );
@@ -383,7 +386,12 @@ export default function ExploreScreen() {
         </View>
 
         <View style={styles.section}>
-          <ElectionCenterCard placeLabel={placeLabel} cycleYear={CYCLE_YEAR} gutter={gutter} />
+          <ElectionCenterCard
+            placeLabel={placeLabel}
+            cycleYear={CYCLE_YEAR}
+            ballot={federalBallot(stateAbbr, stateName, reps)}
+            gutter={gutter}
+          />
         </View>
 
         <View style={styles.section}>
