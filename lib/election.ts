@@ -27,6 +27,19 @@ export const CLASS_II_STATES = new Set([
   "OR", "RI", "SC", "SD", "TN", "TX", "VA", "WV", "WY",
 ]);
 
+/**
+ * States holding a 2026 Senate SPECIAL election, on top of the Class II cycle.
+ *
+ * Ohio and Florida are filling seats vacated mid-term — JD Vance's and Marco
+ * Rubio's. Neither state holds a Class II seat, so keying the ballot on class
+ * alone told voters in both states they had no Senate race when they do. That
+ * is the precise harm this module is meant to prevent: a stated absence reads
+ * as "nothing here", which is a claim, not a silence.
+ *
+ * 35 seats are contested in 2026 — 33 Class II plus these two.
+ */
+export const SPECIAL_SENATE_2026 = new Set(["OH", "FL"]);
+
 export interface BallotOffice {
   office: string;
   /** The seat itself, e.g. "MD-08" or "Maryland". */
@@ -76,6 +89,15 @@ export function federalBallot(
       controls: "Senate votes, confirmations and treaties. One of your state's two seats is contested this year.",
       incumbent: null,
       incumbentNote: "One of your state's two Senate seats is on the ballot",
+    });
+  } else if (stateAbbr && SPECIAL_SENATE_2026.has(stateAbbr)) {
+    out.push({
+      office: "U.S. Senate (special election)",
+      seat: stateName ?? stateAbbr,
+      controls:
+        "Senate votes, confirmations and treaties. Your state is filling a seat that was vacated mid-term, so this race is on the ballot outside the usual six-year cycle.",
+      incumbent: null,
+      incumbentNote: "A vacated Senate seat is on the ballot",
     });
   }
 
