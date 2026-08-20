@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { View, Pressable, ScrollView, StyleSheet, Image } from "react-native";
+import { View, Pressable, ScrollView, StyleSheet, Image, Share } from "react-native";
 import { Text } from "@/components/Text";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -50,7 +50,19 @@ export default function StoryDetailScreen() {
           <Pressable onPress={async () => { const next = await toggleSavedId(story.id); setSaved(next.includes(story.id)); }} hitSlop={8}>
             <Bookmark size={20} color={saved ? color.brand.deepTeal : color.light.ink} fill={saved ? color.brand.deepTeal : "none"} />
           </Pressable>
-          <Share2 size={20} color={color.light.ink} />
+          <Pressable
+            onPress={() => {
+              // Shares the headline plus the primary source, so what leaves the
+              // app still points at the record rather than just an assertion.
+              const url = story.sources.find((x) => x.url)?.url;
+              Share.share({ message: url ? `${story.headline}\n\n${url}` : story.headline });
+            }}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={`Share ${story.headline}`}
+          >
+            <Share2 size={20} color={color.light.ink} />
+          </Pressable>
         </View>
       </View>
 

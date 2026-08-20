@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { View, ScrollView, StyleSheet, Pressable, Image, ActivityIndicator, useWindowDimensions } from "react-native";
 import { Text } from "@/components/Text";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import { Bell, MapPin } from "lucide-react-native";
 import { color } from "@/lib/tokens";
 import { supabase } from "@/lib/supabase";
@@ -29,6 +30,7 @@ function dateLabel() {
 }
 
 export default function TodayScreen() {
+  const router = useRouter();
   const [filter, setFilter] = useState<TopicScope | "All">("All");
   const [name, setName] = useState<string | null>(null);
   const [stories, setStories] = useState<Story[]>([]);
@@ -110,9 +112,10 @@ export default function TodayScreen() {
             )}
 
             <Pressable
+              onPress={() => router.push("/you")}
               hitSlop={10}
               accessibilityRole="button"
-              accessibilityLabel="Open notifications"
+              accessibilityLabel="Notification settings"
               style={styles.iconButton}
             >
               <Bell size={24} color="#101418" strokeWidth={1.8} />

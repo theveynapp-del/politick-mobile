@@ -45,8 +45,19 @@ export default function RepresentativeDetailScreen() {
         </View>
 
         <View style={{ paddingHorizontal: 20, paddingTop: 16 }}>
-          <Pressable style={styles.contactBtn}>
-            <Text style={styles.contactBtnText}>Contact Office</Text>
+          <Pressable
+            style={[styles.contactBtn, !rep.phone && !rep.website && styles.contactBtnDisabled]}
+            disabled={!rep.phone && !rep.website}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !rep.phone && !rep.website }}
+            accessibilityLabel={`Contact ${rep.name}`}
+            onPress={() =>
+              Linking.openURL(rep.phone ? `tel:${rep.phone}` : (rep.website as string))
+            }
+          >
+            <Text style={styles.contactBtnText}>
+              {rep.phone || rep.website ? "Contact Office" : "No contact details on file"}
+            </Text>
           </Pressable>
         </View>
 
@@ -107,6 +118,7 @@ const styles = StyleSheet.create({
   avatarText: { fontSize: 22, fontWeight: "800", color: color.brand.deepTeal },
   name: { fontSize: 21, fontWeight: "800", color: color.light.ink, marginBottom: 3 },
   role: { fontSize: 13, color: color.light.muted },
+  contactBtnDisabled: { opacity: 0.45 },
   contactBtn: { backgroundColor: color.brand.deepTeal, borderRadius: radius.button, height: 48, alignItems: "center", justifyContent: "center" },
   contactBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
   contactGrid: { flexDirection: "row", paddingHorizontal: 20, paddingVertical: 14, gap: 8 },
