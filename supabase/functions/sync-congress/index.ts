@@ -137,6 +137,11 @@ Deno.serve(async (req: Request) => {
     const todo = refs.filter((r) => !have.has(`congress-${r.congress}-${r.type}-${r.number}`));
 
     let inserted = 0, failed = 0;
+    // api.data.gov publishes remaining quota on every response. Reading it
+    // turns "8 failed" into a stated reason, and lets the run stop cleanly
+    // instead of burning the rest of the batch against a spent limit.
+    let rateRemaining: number | null = null;
+    let stoppedOnRateLimit = false;
     const trace: unknown[] = [];
 
     for (let i = 0; i < todo.length; i += BATCH) {
@@ -149,11 +154,15 @@ Deno.serve(async (req: Request) => {
             `https://api.congress.gov/v3/bill/${r.congress}/${r.type}/${r.number}?api_key=${API_KEY}&format=json`,
             { signal: AbortSignal.timeout(25000) }
           );
+          const rem = res.headers.get("x-ratelimit-remaining");
+          if (rem !== null) rateRemaining = Number(rem);
+          if (res.status === 429) { stoppedOnRateLimit = true; break; }
           if (!res.ok) { failed++; continue; }
           const bill = (await res.json()).bill;
           if (bill?.title) details.push({ ref: r, bill });
         } catch { failed++; }
       }
+      if (stoppedOnRateLimit && details.length === 0) break;
       if (details.length === 0) { trace.push({ stage: 'detail', got: 0, of: slice.length }); continue; }
 
       const summarized = await summarize(
@@ -217,7 +226,20 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    return json({ ok: true, considered: refs.length, alreadyHad: have.size, inserted, failed, usingDemoKey: !RAW_KEY, ...(body.debug ? { trace } : {}) });
+    return json({
+      ok: true,
+      considered: refs.length,
+      alreadyHad: have.size,
+      inserted,
+      failed,
+      rateRemaining,
+      stoppedOnRateLimit,
+      usingDemoKey: !RAW_KEY,
+      ...(stoppedOnRateLimit
+        ? { note: "Stopped early: api.data.gov rate limit reached. Set DATA_GOV_API_KEY for a real quota." }
+        : {}),
+      ...(body.debug ? { trace } : {}),
+    });
   } catch (err) {
     return json({ error: String(err) }, 500);
   }
