@@ -136,10 +136,12 @@ Deno.serve(async (req: Request) => {
     }
     const body = await req.json().catch(() => ({}));
 
-    // Only states someone actually lives in — a bill nobody's ZIP maps to
-    // would never reach a reader.
-    const { data: places } = await supabase.from("zip_locations").select("state_abbr");
-    const served: string[] = [...new Set((places ?? []).map((p) => p.state_abbr as string))];
+    // Every state, not only the ones we've already seen a user from.
+    // zip_locations fills in as ZIPs get resolved, so scoping to it was
+    // circular: a new user in a state we'd never served would find no state
+    // coverage precisely because they were the first person there. Coverage
+    // has to exist before the user arrives, not after.
+    const served: string[] = Object.keys(STATE_NAMES);
 
     // Least-recently-attempted first. Ordering by newest bill date instead
     // kept re-picking out-of-session legislatures — Texas and Nevada always
