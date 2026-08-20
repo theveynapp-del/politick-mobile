@@ -45,6 +45,20 @@ interface StoryRow {
  * shown only to readers in that state. Explore has to agree with Today about
  * what counts as local to you, or the two screens contradict each other.
  */
+/**
+ * Concatenates every text block in a Claude response.
+ *
+ * Indexing content[0] blindly returns an empty string whenever the response
+ * leads with a non-text block, which fails silently — stop_reason reads
+ * end_turn and the caller sees no output with no error.
+ */
+function textFrom(data: any): string {
+  return (data?.content ?? [])
+    .filter((c: any) => c?.type === "text" && typeof c.text === "string")
+    .map((c: any) => c.text)
+    .join("");
+}
+
 function inScope(row: StoryRow, stateName: string | null): boolean {
   if (row.scope === "Federal" || row.scope === "World") return true;
   return !!stateName && row.state === stateName;
@@ -180,7 +194,7 @@ Deno.serve(async (req: Request) => {
 
     return json({
       found: true,
-      answer: anthropicData.content?.[0]?.text ?? "",
+      answer: textFrom(anthropicData),
       // Returned in full so the app can show what the answer was built from
       // and let the reader open any of it, rather than ending at the prose.
       stories: ranked.slice(0, RESULT_LIMIT).map((s) => ({

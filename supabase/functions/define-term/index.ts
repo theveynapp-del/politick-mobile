@@ -39,6 +39,20 @@ If the input is not a civic, legal, governmental or policy concept — for examp
 
 Plain sentences. No markdown, no lists, no headings.`;
 
+/**
+ * Concatenates every text block in a Claude response.
+ *
+ * Indexing content[0] blindly returns an empty string whenever the response
+ * leads with a non-text block, which fails silently — stop_reason reads
+ * end_turn and the caller sees no output with no error.
+ */
+function textFrom(data: any): string {
+  return (data?.content ?? [])
+    .filter((c: any) => c?.type === "text" && typeof c.text === "string")
+    .map((c: any) => c.text)
+    .join("");
+}
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -88,7 +102,7 @@ Deno.serve(async (req: Request) => {
     if (!res.ok) return json({ error: `Claude API failed: ${await res.text()}` }, 500);
 
     const data = await res.json();
-    const text = (data.content?.[0]?.text ?? "").trim();
+    const text = textFrom(data).trim();
 
     if (!text || text.includes(NOT_CIVIC)) {
       return json({ found: false, term });

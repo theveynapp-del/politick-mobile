@@ -83,6 +83,20 @@ interface Snippet {
   topics: { text: string; topicIds: string[] }[];
 }
 
+/**
+ * Concatenates every text block in a Claude response.
+ *
+ * Indexing content[0] blindly returns an empty string whenever the response
+ * leads with a non-text block, which fails silently — stop_reason reads
+ * end_turn and the caller sees no output with no error.
+ */
+function textFrom(data: any): string {
+  return (data?.content ?? [])
+    .filter((c: any) => c?.type === "text" && typeof c.text === "string")
+    .map((c: any) => c.text)
+    .join("");
+}
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -163,7 +177,7 @@ async function summarize(items: Snippet[]): Promise<
   });
   if (!res.ok) return [];
 
-  const text = (await res.json()).content?.[0]?.text ?? "";
+  const text = textFrom(await res.json());
   const start = text.indexOf("["), end = text.lastIndexOf("]");
   if (start < 0 || end < 0) return [];
   try {
