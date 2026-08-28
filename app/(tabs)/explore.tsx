@@ -392,6 +392,7 @@ export default function ExploreScreen() {
             ballot={federalBallot(stateAbbr, stateName, reps)}
             gutter={gutter}
             onOpen={() => router.push("/election")}
+            onOpenIncumbent={(repId) => router.push(`/representative/${repId}`)}
           />
         </View>
 

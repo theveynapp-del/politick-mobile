@@ -234,12 +234,14 @@ export function ElectionCenterCard({
   ballot,
   gutter,
   onOpen,
+  onOpenIncumbent,
 }: {
   placeLabel: string | null;
   cycleYear: string;
   ballot: BallotOffice[];
   gutter: number;
   onOpen: () => void;
+  onOpenIncumbent?: (repId: string) => void;
 }) {
   const days = daysUntilElection();
 
@@ -284,18 +286,48 @@ export function ElectionCenterCard({
                   <Text style={styles.ballotOffice}>{o.office}</Text>
                   <Text style={styles.ballotSeat}>{o.seat}</Text>
                   <Text style={styles.ballotControls}>{o.controls}</Text>
-                  <View style={styles.ballotIncumbent}>
-                    {o.incumbent?.photoUrl ? (
-                      <Image
-                        source={{ uri: o.incumbent.photoUrl }}
-                        style={styles.ballotAvatar}
-                        accessibilityLabel=""
-                      />
-                    ) : null}
-                    <Text style={styles.ballotIncumbentText} numberOfLines={1}>
-                      {o.incumbent ? `${o.incumbentNote} ${o.incumbent.name}` : o.incumbentNote}
-                    </Text>
-                  </View>
+                  {/* The name of the person holding the seat is the most
+                      tappable-looking thing on this card, so it has to be
+                      tappable. Reaching their record previously meant opening
+                      Election Center first and finding the same row again. */}
+                  {o.incumbent && onOpenIncumbent ? (
+                    <Pressable
+                      style={styles.ballotIncumbentPress}
+                      onPress={() => onOpenIncumbent(o.incumbent!.id)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`See how ${o.incumbent.name} has voted and what they sponsored`}
+                    >
+                      {o.incumbent.photoUrl ? (
+                        <Image
+                          source={{ uri: o.incumbent.photoUrl }}
+                          style={styles.ballotAvatar}
+                          accessibilityLabel=""
+                        />
+                      ) : null}
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <Text style={styles.ballotIncumbentText} numberOfLines={1}>
+                          {o.incumbentNote} {o.incumbent.name}
+                        </Text>
+                        <Text style={styles.ballotIncumbentHint}>
+                          See how they've voted and what they sponsored
+                        </Text>
+                      </View>
+                      <ChevronRight size={15} color="#0D5F5B" strokeWidth={2.2} />
+                    </Pressable>
+                  ) : (
+                    <View style={styles.ballotIncumbent}>
+                      {o.incumbent?.photoUrl ? (
+                        <Image
+                          source={{ uri: o.incumbent.photoUrl }}
+                          style={styles.ballotAvatar}
+                          accessibilityLabel=""
+                        />
+                      ) : null}
+                      <Text style={styles.ballotIncumbentText} numberOfLines={1}>
+                        {o.incumbent ? `${o.incumbentNote} ${o.incumbent.name}` : o.incumbentNote}
+                      </Text>
+                    </View>
+                  )}
                 </View>
               </View>
             ))}
@@ -430,6 +462,16 @@ const styles = StyleSheet.create({
   ballotIncumbentText: { flex: 1, minWidth: 0, fontSize: 11.5, lineHeight: 16, color: "#41484F" },
 
   electionNote: { marginTop: 11, fontSize: 11.5, lineHeight: 16, fontWeight: "500", color: "#5D6670" },
+  ballotIncumbentPress: {
+    marginTop: 9,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingTop: 9,
+    borderTopWidth: 1,
+    borderTopColor: "#E7E9EC",
+  },
+  ballotIncumbentHint: { marginTop: 2, fontSize: 11, lineHeight: 14, fontWeight: "700", color: "#0D5F5B" },
   electionCta: {
     marginTop: 13,
     height: 44,
