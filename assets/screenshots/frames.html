@@ -205,6 +205,63 @@ body{background:#20282B;font-family:Inter,-apple-system,sans-serif;padding:40px}
 .tabitem.on .ic{stroke:var(--ink)}
 .tabitem.on::before{content:"";position:absolute;top:-9px;left:50%;transform:translateX(-50%);
   width:26px;height:2.5px;background:var(--deep);border-radius:2px}
+/* ── iPad: the phone layout at tablet width, as the app really renders ──── */
+body.ipad .body{padding:0 40px}
+body.ipad .status{height:44px;padding:0 40px 8px;font-size:17px}
+body.ipad .appbar{padding:10px 40px 16px}
+body.ipad .greet{font-size:34px}
+body.ipad .date{font-size:15px}
+body.ipad .h2{font-size:26px}
+body.ipad .subtle{font-size:15px}
+body.ipad .chip{font-size:15px;padding:8px 18px}
+body.ipad .chips{gap:10px;margin:20px 0 16px}
+body.ipad .card,body.ipad .votecard{padding:20px;border-radius:20px;margin-bottom:14px}
+body.ipad .eyebrow{font-size:12px}
+body.ipad .headline{font-size:21px}
+body.ipad .dek{font-size:16px}
+body.ipad .why{font-size:14.5px}
+body.ipad .cardfoot{font-size:13px}
+body.ipad .repname{font-size:28px}
+body.ipad .reprole{font-size:16px}
+body.ipad .repdist{font-size:14px}
+body.ipad .avatar{width:96px;height:96px}
+body.ipad .act{font-size:15px;padding:15px 0;border-radius:14px}
+body.ipad .tab{font-size:16px;padding:15px 0}
+body.ipad .cite{font-size:15px}
+body.ipad .votetitle{font-size:17px}
+body.ipad .official,body.ipad .chamber{font-size:14px}
+body.ipad .stance{font-size:11px;padding:5px 12px}
+body.ipad .srclink{font-size:14px}
+body.ipad .echero{margin:0 -40px;padding:34px 40px}
+body.ipad .ecdays{font-size:78px}
+body.ipad .ecdayslab{font-size:17px}
+body.ipad .ecdate{font-size:15px}
+body.ipad .ecyear,body.ipad .ecplace{font-size:13px}
+body.ipad .sechead{font-size:24px;margin:26px 0 12px}
+body.ipad .officecard,body.ipad .office,body.ipad .gapnote,body.ipad .booth{padding:22px;border-radius:20px}
+body.ipad .oname{font-size:20px}
+body.ipad .oseat{font-size:15px}
+body.ipad .plainbody,body.ipad .osum{font-size:17px}
+body.ipad .plainlab,body.ipad .olabel,body.ipad .osub,body.ipad .limitlab,body.ipad .metalab{font-size:12px}
+body.ipad .btext,body.ipad .limittext,body.ipad .metatext{font-size:16px}
+body.ipad .incname{font-size:18px}
+body.ipad .inchint{font-size:14px}
+body.ipad .inclab{font-size:12px}
+body.ipad .incumbent img{width:44px;height:44px}
+body.ipad .gaptitle{font-size:17px}
+body.ipad .gapbody,body.ipad .boothbody{font-size:15px}
+body.ipad .boothtitle{font-size:16px}
+body.ipad .dhead{font-size:30px}
+body.ipad .dbody{font-size:17px}
+body.ipad .dsect{font-size:12px}
+body.ipad .srcname{font-size:16px}
+body.ipad .srcdom{font-size:14px}
+body.ipad .tabbar{padding:14px 0 30px}
+body.ipad .tabitem{font-size:13px}
+body.ipad .tabitem .ic{width:26px;height:26px}
+body.ipad .mark{width:34px;height:34px}
+body.ipad .wordmark{font-size:25px}
+body.ipad .zippill{font-size:14px;padding:8px 14px}
 </style>
 </head>
 <body>
@@ -517,7 +574,20 @@ body{background:#20282B;font-family:Inter,-apple-system,sans-serif;padding:40px}
 <script>
   // ?solo=N isolates one frame with no padding, so a headless capture at
   // 440×956 contains exactly that frame and nothing else.
-  const solo = new URLSearchParams(location.search).get("solo");
+  const params = new URLSearchParams(location.search);
+
+  // ?ipad=1 → 1032 × 1376 CSS px, which at 2× is 2064 × 2752, the required
+  // 13" iPad size. The frame simply gets wider and the same markup reflows,
+  // because that is what the app itself does: there is no iPad layout, only
+  // the phone layout at tablet width. A screenshot showing a tablet design
+  // the app does not have would be a lie about the product.
+  if (params.get("ipad")) {
+    document.documentElement.style.setProperty("--fw", "1032px");
+    document.documentElement.style.setProperty("--fh", "1376px");
+    document.body.classList.add("ipad");
+  }
+
+  const solo = params.get("solo");
   if (solo) {
     document.body.style.padding = "0";
     document.getElementById("chrome").style.display = "none";
