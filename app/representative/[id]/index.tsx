@@ -10,6 +10,7 @@ import { getRepresentativesByZip } from "@/lib/queries";
 import { getZipOrDefault } from "@/lib/onboarding";
 import { getGovActivity, bioguideIdsFor, GovActivityItem } from "@/lib/govActivity";
 import { getMemberVotes, stanceLabel, stanceOf, MemberVote } from "@/lib/memberVotes";
+import { officeProfileFor } from "@/lib/officeRoles";
 import { Representative } from "@/lib/types";
 
 /**
@@ -172,10 +173,7 @@ export default function RepresentativeDetailScreen() {
         <View style={{ padding: 20, paddingBottom: 40 }}>
           {tab === "overview" ? (
             <>
-              <View style={styles.officeCard}>
-                <Text style={styles.officeLabel}>WHAT THIS OFFICE DOES</Text>
-                <Text style={styles.officeBody}>{rep.controls}</Text>
-              </View>
+              <OfficeExplainer rep={rep} />
               {rep.jurisdictionConfidence === "Needs review" ? (
                 <View style={styles.noteCard}>
                   <Text style={styles.noteText}>
@@ -198,6 +196,62 @@ export default function RepresentativeDetailScreen() {
         </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+/**
+ * What the office does, at a length that can actually answer the question.
+ *
+ * Falls back to the record's own one-line `controls` string when the title
+ * isn't one lib/officeRoles recognises — better a thin true sentence than a
+ * confident description of an office we haven't checked.
+ */
+function OfficeExplainer({ rep }: { rep: Representative }) {
+  const profile = officeProfileFor(rep.role, rep.level);
+
+  if (!profile) {
+    return (
+      <View style={styles.officeCard}>
+        <Text style={styles.officeLabel}>WHAT THIS OFFICE DOES</Text>
+        <Text style={styles.officeBody}>{rep.controls}</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.officeCard}>
+      <Text style={styles.officeLabel}>WHAT THIS OFFICE DOES</Text>
+      <Text style={styles.officeSummary}>{profile.summary}</Text>
+
+      <Text style={styles.officeSubLabel}>WHAT THEY DECIDE</Text>
+      {profile.decides.map((d) => (
+        <View key={d} style={styles.bulletRow}>
+          <View style={styles.bulletDot} />
+          <Text style={styles.bulletText}>{d}</Text>
+        </View>
+      ))}
+
+      {profile.limits ? (
+        <View style={styles.limitBox}>
+          <Text style={styles.limitLabel}>WHAT THEY CAN&rsquo;T DO</Text>
+          <Text style={styles.limitText}>{profile.limits}</Text>
+        </View>
+      ) : null}
+
+      {profile.term ? (
+        <View style={styles.metaRow}>
+          <Text style={styles.metaLabel}>TERM</Text>
+          <Text style={styles.metaText}>{profile.term}</Text>
+        </View>
+      ) : null}
+
+      {profile.varies ? (
+        <View style={styles.metaRow}>
+          <Text style={styles.metaLabel}>VARIES BY PLACE</Text>
+          <Text style={styles.metaText}>{profile.varies}</Text>
+        </View>
+      ) : null}
+    </View>
   );
 }
 
@@ -471,6 +525,17 @@ const styles = StyleSheet.create({
   officeCard: { backgroundColor: color.light.surface, borderWidth: 1, borderColor: color.light.border, borderRadius: radius.card, padding: 16 },
   officeLabel: { fontSize: 10.5, fontWeight: "800", color: color.brand.deepTeal, marginBottom: 8, letterSpacing: 0.4 },
   officeBody: { fontSize: 14, lineHeight: 20, color: color.light.ink },
+  officeSummary: { fontSize: 14.5, lineHeight: 21, color: color.light.ink, marginBottom: 16 },
+  officeSubLabel: { fontSize: 10, fontWeight: "800", letterSpacing: 0.4, color: color.light.muted, marginBottom: 8 },
+  bulletRow: { flexDirection: "row", gap: 9, marginBottom: 8 },
+  bulletDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: color.brand.signalGold, marginTop: 7 },
+  bulletText: { flex: 1, fontSize: 13.5, lineHeight: 19.5, color: color.light.ink },
+  limitBox: { marginTop: 8, backgroundColor: color.brand.warmSand, borderRadius: 12, padding: 13 },
+  limitLabel: { fontSize: 10, fontWeight: "800", letterSpacing: 0.4, color: "#7A5B2E", marginBottom: 5 },
+  limitText: { fontSize: 13, lineHeight: 19, color: color.light.ink },
+  metaRow: { marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: color.light.border },
+  metaLabel: { fontSize: 10, fontWeight: "800", letterSpacing: 0.4, color: color.light.muted, marginBottom: 4 },
+  metaText: { fontSize: 13, lineHeight: 19, color: color.light.muted },
   noteCard: { marginTop: 12, backgroundColor: color.brand.warmSand, borderRadius: radius.card, padding: 14 },
   noteText: { fontSize: 12.5, lineHeight: 18, color: color.light.ink },
   activityRow: { backgroundColor: color.light.surface, borderWidth: 1, borderColor: color.light.border, borderRadius: radius.card, padding: 16 },
