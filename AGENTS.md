@@ -49,3 +49,40 @@ as specified, but feed it real data, and show an honest empty state when real
 data doesn't exist. Do not ship mockup content as if it were real — the spec's
 sample officials included a senator who left office in 2024 and a
 representative for the wrong district.
+
+# Neutral voice
+
+Politick describes government; it does not argue about it. That holds for every
+word a reader sees — hand-written copy, model prompts, empty states, headlines.
+Sourcing rules alone are not enough: a sentence can be perfectly sourced and
+still be persuasion.
+
+Never write, and never let a model write:
+
+- **Superlatives that rank things.** "The most powerful office", "the biggest
+  lever", "arguably the most consequential". Whether a governorship outranks a
+  legislature is an argument, not a fact.
+- **Contested causal claims.** "Zoning is the single biggest lever government
+  has over housing costs" is one side of a live housing debate. State the
+  mechanism — zoning decides what can be built where — and stop.
+- **Characterisations of motive or position.** What a person, party or group
+  wants, believes, intends, or whether a position is extreme, moderate,
+  sensible or radical.
+- **Predictions.** What is likely to pass, what happens next, who will win.
+- **Verdicts.** Whether something is good, bad, effective, justified or worth
+  supporting.
+- **Framings borrowed from an argument.** "A Wyoming voter has far more Senate
+  influence per person than a Californian" is arithmetically true and is also
+  the standard opening of the malapportionment case. Give the fact — every
+  state elects two, whatever its population — without the frame.
+
+Describing a disagreement is fine. Joining it is not.
+
+Where a fact genuinely varies by jurisdiction — lieutenant governors, mayors
+under different charters, county boards — say that it varies. Do not pick the
+most common arrangement and assert it.
+
+`lib/officeRoles.ts` is the worked example, and `supabase/functions/define-term`
+is the strictest prompt in the repo; copy its "you must never" block when adding
+any new model-backed surface. `scripts/check-neutral-voice.mjs` catches the
+common offenders, but it is a net, not a substitute for reading what you wrote.
