@@ -12,7 +12,7 @@
       "expo-router"
     ],
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "app.politick.mobile",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
