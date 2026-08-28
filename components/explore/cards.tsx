@@ -233,11 +233,13 @@ export function ElectionCenterCard({
   cycleYear,
   ballot,
   gutter,
+  onOpen,
 }: {
   placeLabel: string | null;
   cycleYear: string;
   ballot: BallotOffice[];
   gutter: number;
+  onOpen: () => void;
 }) {
   const days = daysUntilElection();
 
@@ -304,6 +306,18 @@ export function ElectionCenterCard({
           Candidate lists and ballot measures aren't available yet. We'll add them when we can
           source a complete ballot for your area.
         </Text>
+
+        {/* The card is the summary; the screen behind it is where the ballot
+            actually gets explained. */}
+        <Pressable
+          style={styles.electionCta}
+          onPress={onOpen}
+          accessibilityRole="button"
+          accessibilityLabel="Open Election Center"
+        >
+          <Text style={styles.electionCtaText}>Understand your ballot</Text>
+          <ChevronRight size={15} color="#FFFFFF" strokeWidth={2.4} />
+        </Pressable>
       </View>
     </View>
   );
@@ -416,5 +430,16 @@ const styles = StyleSheet.create({
   ballotIncumbentText: { flex: 1, minWidth: 0, fontSize: 11.5, lineHeight: 16, color: "#41484F" },
 
   electionNote: { marginTop: 11, fontSize: 11.5, lineHeight: 16, fontWeight: "500", color: "#5D6670" },
+  electionCta: {
+    marginTop: 13,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "#0D5F5B",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  electionCtaText: { fontSize: 13.5, fontWeight: "700", color: "#FFFFFF" },
   electionArt: { width: 76, height: 94, marginRight: 2 },
 });

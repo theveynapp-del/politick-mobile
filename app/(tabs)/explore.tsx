@@ -391,6 +391,7 @@ export default function ExploreScreen() {
             cycleYear={CYCLE_YEAR}
             ballot={federalBallot(stateAbbr, stateName, reps)}
             gutter={gutter}
+            onOpen={() => router.push("/election")}
           />
         </View>
 
