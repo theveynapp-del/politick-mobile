@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Politick · App Store Screenshots · 1320 × 2868</title>
+<title>Politick · App Store Screenshots · 1284 × 2778</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -10,9 +10,14 @@
 /* =============================================================================
    Politick App Store screenshots.
 
-   Frames are 440 × 956 CSS px. Rendered headless at --force-device-scale-factor=3
-   that is exactly 1320 × 2868 — Apple's 6.9" iPhone size, which every smaller
-   size is scaled down from.
+   Frames are 428 × 926 CSS px. Rendered headless at --force-device-scale-factor=3
+   that is exactly 1284 × 2778 — the 6.7" iPhone size.
+
+   Use 6.7", not 6.9". App Store Connect rejected 1320 × 2868 outright with
+   "Screenshots dimensions should be: 1242 × 2688px, 2688 × 1242px,
+   1284 × 2778px or 2778 × 1284px". The 6.9" size is real and documented, but
+   it is not what this app record accepts, so match the form rather than the
+   documentation. CAPTURE_65=1 switches to 414 × 896 -> 1242 × 2688.
 
    Every string in here is real: story headlines and summaries come from the
    stories table, the votes are Jamie Raskin's actual record from roll_calls,
@@ -26,7 +31,7 @@
   --canvas:#F7F6F2; --surface:#FFFFFF; --ink:#101418; --muted:#5D6670; --border:#DDE1E5;
   --deep:#0D5F5B; --civic:#167D79; --soft:#DCEFED; --gold:#D9A441; --sand:#EEE9DE;
   --coral:#B84E3C;
-  --fw:440px; --fh:956px;
+  --fw:428px; --fh:926px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{background:#20282B;font-family:Inter,-apple-system,sans-serif;padding:40px}
@@ -206,7 +211,7 @@ body{background:#20282B;font-family:Inter,-apple-system,sans-serif;padding:40px}
 
 <div class="pagehead" id="chrome">
   <b>Politick · App Store screenshots</b>
-  440 × 956 CSS px &nbsp;·&nbsp; captured at 3× = <b style="display:inline">1320 × 2868</b> &nbsp;·&nbsp; iPhone 6.9"
+  428 × 926 CSS px &nbsp;·&nbsp; captured at 3× = <b style="display:inline">1284 × 2778</b> &nbsp;·&nbsp; iPhone 6.7"
 </div>
 
 <div class="rack" id="rack">
