@@ -42,6 +42,20 @@ export async function getStoredZip(): Promise<string | null> {
   return AsyncStorage.getItem(KEYS.zip);
 }
 
+/**
+ * The ZIP used before the reader has given one. Every screen had its own copy
+ * of this literal, and the representative detail screen skipped the lookup
+ * altogether and passed the literal straight to the query — so it showed
+ * Bethesda's officials to everyone, everywhere.
+ */
+export const DEFAULT_ZIP = "20814";
+
+/** The reader's ZIP, or the default. Guards the stored value's shape. */
+export async function getZipOrDefault(): Promise<string> {
+  const stored = await getStoredZip();
+  return stored && stored.length === 5 ? stored : DEFAULT_ZIP;
+}
+
 export async function setStoredZip(zip: string) {
   await AsyncStorage.setItem(KEYS.zip, zip);
 }
