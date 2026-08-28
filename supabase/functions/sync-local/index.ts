@@ -10,9 +10,9 @@
 // handled it, and a status the city itself set.
 //
 // Client slugs are not derivable from the city name — Austin is
-// "austintexas", Minneapolis is "minneapolismn", Miami is "miamifl" — so they
-// are verified by hand and listed below. Cities whose slug 500s or 403s
-// (Chicago, Philadelphia, New York) are simply absent rather than guessed at.
+// "austintexas", Miami is "miamifl", LA County is "lacounty" — so each one is
+// verified by hand. See the note on CITIES for what "verified" has to mean
+// here: a 200 is not enough on its own.
 //
 // Deploy:  supabase functions deploy sync-local
 // Secrets: ANTHROPIC_API_KEY
@@ -27,11 +27,14 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const PER_CITY = 5;
+const PER_CITY = 10;
 const BATCH = 5;
 // 150s wall clock, and each city costs a list call plus a model call.
 const CITIES_PER_RUN = 4;
 const PACE_MS = 400;
+// A client can stay online long after its council stops publishing to it.
+// Anything older than this is treated as a dormant feed rather than news.
+const MAX_AGE_DAYS = 120;
 
 interface City {
   slug: string;
@@ -39,16 +42,51 @@ interface City {
   state: string;
 }
 
-/** Verified working against webapi.legistar.com on 2026-08-28. */
+/**
+ * Verified against webapi.legistar.com on 2026-08-28 by ITEM COUNT AND
+ * RECENCY, not by status code.
+ *
+ * That distinction cost a city: minneapolismn answers 200 and returns [], so
+ * a status-only check called it working and it silently contributed nothing.
+ * Several other clients answer 200 with real data whose newest matter is from
+ * 2018 or 2023 — montgomerycountymd and miamidade among them. A dormant
+ * council publishing three-year-old proclamations as today's local news is
+ * worse than no coverage, so those are excluded here and MAX_AGE_DAYS guards
+ * the rest.
+ *
+ * Absent because no public Legistar API exists for them: Chicago and
+ * Philadelphia (500), New York and DC (403). Those cities run different
+ * systems and each needs its own integration.
+ *
+ * wilmington is left out deliberately: it returns current data, but its
+ * bodies ("Plan Commission", "Landmarks Commission") don't establish whether
+ * it's Delaware, North Carolina or Illinois, and filing a city under the
+ * wrong state shows the wrong readers the wrong government.
+ */
 const CITIES: City[] = [
   { slug: "seattle", city: "Seattle", state: "Washington" },
+  { slug: "kingcounty", city: "King County", state: "Washington" },
   { slug: "denver", city: "Denver", state: "Colorado" },
+  { slug: "coloradosprings", city: "Colorado Springs", state: "Colorado" },
   { slug: "baltimore", city: "Baltimore", state: "Maryland" },
   { slug: "austintexas", city: "Austin", state: "Texas" },
+  { slug: "plano", city: "Plano", state: "Texas" },
   { slug: "boston", city: "Boston", state: "Massachusetts" },
-  { slug: "minneapolismn", city: "Minneapolis", state: "Minnesota" },
+  { slug: "somervillema", city: "Somerville", state: "Massachusetts" },
   { slug: "nashville", city: "Nashville", state: "Tennessee" },
   { slug: "columbus", city: "Columbus", state: "Ohio" },
+  { slug: "princetonnj", city: "Princeton", state: "New Jersey" },
+  { slug: "alexandria", city: "Alexandria", state: "Virginia" },
+  { slug: "richmondva", city: "Richmond", state: "Virginia" },
+  { slug: "sanjose", city: "San Jose", state: "California" },
+  { slug: "sacramento", city: "Sacramento", state: "California" },
+  { slug: "oakland", city: "Oakland", state: "California" },
+  { slug: "lacounty", city: "Los Angeles County", state: "California" },
+  { slug: "phoenix", city: "Phoenix", state: "Arizona" },
+  { slug: "milwaukee", city: "Milwaukee", state: "Wisconsin" },
+  { slug: "charlottenc", city: "Charlotte", state: "North Carolina" },
+  { slug: "pittsburgh", city: "Pittsburgh", state: "Pennsylvania" },
+  { slug: "louisville", city: "Louisville", state: "Kentucky" },
   { slug: "miamifl", city: "Miami", state: "Florida" },
 ];
 
@@ -179,13 +217,18 @@ Deno.serve(async (req: Request) => {
     const upstream: Record<string, unknown> = {};
 
     for (const c of queue) {
-      // Logged before any `continue` can skip it, so a city that always fails
-      // still rotates to the back of the queue.
+      // Logged before the work starts, so a city that always fails still
+      // rotates to the back of the queue rather than being retried forever.
       await supabase
         .from("state_sync_log")
         .upsert({ state_abbr: `legistar:${c.slug}`, last_attempt_at: new Date().toISOString() });
 
       try {
+        // Labelled so every early exit still reaches the last_result write
+        // below. Plain `continue`s here jumped clean over it, which is how a
+        // failing city ended up logging an attempt and no reason for it —
+        // the same bug this pipeline already hit once in sync-openstates.
+        city: {
         const url =
           `https://webapi.legistar.com/v1/${c.slug}/matters` +
           `?$top=${PER_CITY}&$orderby=MatterLastModifiedUtc%20desc`;
@@ -195,18 +238,23 @@ Deno.serve(async (req: Request) => {
         // council.
         if (!res.ok) {
           upstream[c.slug] = { status: res.status, error: (await res.text()).slice(0, 120) };
-          continue;
+          break city;
         }
 
-        const matters = ((await res.json()) as Matter[]).filter((m) => m?.MatterTitle);
-        upstream[c.slug] = { status: 200, returned: matters.length };
+        const all = ((await res.json()) as Matter[]).filter((m) => m?.MatterTitle);
+        const cutoff = Date.now() - MAX_AGE_DAYS * 86400000;
+        const matters = all.filter(
+          (m) => new Date(safeIso(m.MatterLastModifiedUtc, m.MatterIntroDate)).getTime() >= cutoff
+        );
+        upstream[c.slug] = { status: 200, returned: all.length, fresh: matters.length };
+        if (matters.length === 0) break city;
 
         const ids = matters.map((m) => `legistar-${c.slug}-${m.MatterId}`);
         const { data: existing } = await supabase
           .from("stories").select("external_id").in("external_id", ids);
         const have = new Set((existing ?? []).map((r) => r.external_id));
         const todo = matters.filter((m) => !have.has(`legistar-${c.slug}-${m.MatterId}`));
-        if (todo.length === 0) continue;
+        if (todo.length === 0) break city;
 
         for (let i = 0; i < todo.length; i += BATCH) {
           const slice = todo.slice(i, i + BATCH);
@@ -264,6 +312,7 @@ Deno.serve(async (req: Request) => {
             });
             inserted++;
           }
+        }
         }
       } catch (e) {
         upstream[c.slug] = { status: "exception", error: String(e).slice(0, 120) };
