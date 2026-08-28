@@ -30,11 +30,13 @@ const CORS_HEADERS = {
 const PER_CITY = 10;
 const BATCH = 5;
 // 150s wall clock, and each city costs a list call plus a model call.
-const CITIES_PER_RUN = 4;
+const CITIES_PER_RUN = 3;
 const PACE_MS = 400;
 // A client can stay online long after its council stops publishing to it.
 // Anything older than this is treated as a dormant feed rather than news.
 const MAX_AGE_DAYS = 120;
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 interface City {
   slug: string;
@@ -43,54 +45,41 @@ interface City {
 }
 
 /**
- * Verified against webapi.legistar.com on 2026-08-28 by ITEM COUNT AND
- * RECENCY, not by status code.
+ * Which councils to read now lives in the legistar_clients table, not here.
  *
- * That distinction cost a city: minneapolismn answers 200 and returns [], so
- * a status-only check called it working and it silently contributed nothing.
- * Several other clients answer 200 with real data whose newest matter is from
- * 2018 or 2023 — montgomerycountymd and miamidade among them. A dormant
- * council publishing three-year-old proclamations as today's local news is
- * worse than no coverage, so those are excluded here and MAX_AGE_DAYS guards
- * the rest.
+ * The list went 9 -> 24 -> 81 in a day, and every change meant redeploying a
+ * function to edit an array. As a table, adding a city is an insert and
+ * retiring a dark client is an update.
  *
- * Absent because no public Legistar API exists for them: Chicago and
- * Philadelphia (500), New York and DC (403). Those cities run different
- * systems and each needs its own integration.
+ * What "verified" has to mean is worth recording even though the data moved:
+ * item count and recency, never status code. minneapolismn answers 200 with
+ * []; montgomerycountymd and miamidade answer 200 with records last touched
+ * in 2023 and 2018. A dormant client is worse than a dead one, because it
+ * publishes three-year-old proclamations as today's local news and nothing in
+ * the response says so. MAX_AGE_DAYS enforces that at read time regardless of
+ * what any row claims.
  *
- * wilmington is left out deliberately: it returns current data, but its
- * bodies ("Plan Commission", "Landmarks Commission") don't establish whether
- * it's Delaware, North Carolina or Illinois, and filing a city under the
- * wrong state shows the wrong readers the wrong government.
+ * Generic slugs are the other trap. "columbus", "kansascity", "wilmington",
+ * "salem" and "alexandria" each name several US places, and a sweep will
+ * happily file one under whichever city generated the slug. Each was checked
+ * against its own records, which corrected two: columbus is Ohio (its matters
+ * cite "Columbus, OH 43215"), not Georgia; kansascity is Missouri (Roy Blunt
+ * Luminary Park), not Kansas. Filing a city under the wrong state shows the
+ * wrong readers the wrong government.
+ *
+ * Still absent and not fixable with a better slug: Chicago and Philadelphia
+ * (500), New York and DC (403). They expose no public Legistar API at all —
+ * DC runs LIMS, NYC keeps its Legistar behind auth. Each is its own job.
  */
-const CITIES: City[] = [
-  { slug: "seattle", city: "Seattle", state: "Washington" },
-  { slug: "kingcounty", city: "King County", state: "Washington" },
-  { slug: "denver", city: "Denver", state: "Colorado" },
-  { slug: "coloradosprings", city: "Colorado Springs", state: "Colorado" },
-  { slug: "baltimore", city: "Baltimore", state: "Maryland" },
-  { slug: "austintexas", city: "Austin", state: "Texas" },
-  { slug: "plano", city: "Plano", state: "Texas" },
-  { slug: "boston", city: "Boston", state: "Massachusetts" },
-  { slug: "somervillema", city: "Somerville", state: "Massachusetts" },
-  { slug: "nashville", city: "Nashville", state: "Tennessee" },
-  { slug: "columbus", city: "Columbus", state: "Ohio" },
-  { slug: "princetonnj", city: "Princeton", state: "New Jersey" },
-  { slug: "alexandria", city: "Alexandria", state: "Virginia" },
-  { slug: "richmondva", city: "Richmond", state: "Virginia" },
-  { slug: "sanjose", city: "San Jose", state: "California" },
-  { slug: "sacramento", city: "Sacramento", state: "California" },
-  { slug: "oakland", city: "Oakland", state: "California" },
-  { slug: "lacounty", city: "Los Angeles County", state: "California" },
-  { slug: "phoenix", city: "Phoenix", state: "Arizona" },
-  { slug: "milwaukee", city: "Milwaukee", state: "Wisconsin" },
-  { slug: "charlottenc", city: "Charlotte", state: "North Carolina" },
-  { slug: "pittsburgh", city: "Pittsburgh", state: "Pennsylvania" },
-  { slug: "louisville", city: "Louisville", state: "Kentucky" },
-  { slug: "miamifl", city: "Miami", state: "Florida" },
-];
+async function loadCities(): Promise<City[]> {
+  const { data, error } = await supabase
+    .from("legistar_clients")
+    .select("slug, city, state")
+    .eq("active", true);
+  if (error) throw new Error(`legistar_clients unreadable: ${error.message}`);
+  return (data ?? []) as City[];
+}
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 interface Matter {
   MatterId: number;
@@ -204,6 +193,8 @@ Deno.serve(async (req: Request) => {
       .from("state_sync_log")
       .select("state_abbr, last_attempt_at");
     const seen = new Map((log ?? []).map((r) => [r.state_abbr, r.last_attempt_at as string]));
+
+    const CITIES = await loadCities();
 
     const requested: string[] = body.cities ?? [];
     const queue = (requested.length > 0
