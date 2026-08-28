@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   View,
   TextInput,
@@ -13,7 +13,7 @@ import {
 import { Text } from "@/components/Text";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Search, Sparkles, ChevronRight, ExternalLink } from "lucide-react-native";
+import { Search, Sparkles, ChevronRight, ExternalLink, X } from "lucide-react-native";
 import { color } from "@/lib/tokens";
 import { supabase } from "@/lib/supabase";
 import { getTodayStories, getRepresentativesByZip, getZipLocation } from "@/lib/queries";
@@ -51,9 +51,12 @@ export default function ExploreScreen() {
   const tight = width <= 380;
   const gutter = tight ? 16 : 20;
 
+  const scrollRef = useRef<ScrollView>(null);
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [activeQuery, setActiveQuery] = useState<string | null>(null);
+  // Increments per search, purely to drive the scroll-to-top effect.
+  const [searchSeq, setSearchSeq] = useState(0);
   const [result, setResult] = useState<ExploreSearchResult | null>(null);
   const [bills, setBills] = useState<BillSearchResult | null>(null);
   // The explainer lane: what the term means, even when nothing in the app
@@ -106,6 +109,7 @@ export default function ExploreScreen() {
     if (!q.trim()) return;
     setSearching(true);
     setActiveQuery(q);
+    setSearchSeq((n) => n + 1);
     setResult(null);
     setBills(null);
     setDefn(null);
@@ -136,6 +140,26 @@ export default function ExploreScreen() {
     setDefnTerm(null);
   };
 
+  /**
+   * Put the reader at the top whenever a search starts.
+   *
+   * The answer renders above the fold and the issue chips that trigger most
+   * searches sit well below it, so tapping one produced a result the reader
+   * never saw — it read as nothing happening.
+   *
+   * Runs after the render rather than inside runSearch. Scrolling first is
+   * undone: the results block mounts above the current position and the scroll
+   * anchor is preserved, putting the reader back where they were.
+   *
+   * Keyed on a counter, not on activeQuery, so searching the same term twice
+   * still scrolls — activeQuery would be unchanged and the effect would not
+   * fire.
+   */
+  useEffect(() => {
+    if (searchSeq === 0) return;
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  }, [searchSeq]);
+
   const repFor = (bioguideId: string) => reps.find((r) => r.externalId === bioguideId) ?? null;
   const federalReps = reps.filter((r) => r.level === "Federal");
 
@@ -153,6 +177,7 @@ export default function ExploreScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -179,6 +204,20 @@ export default function ExploreScreen() {
               returnKeyType="search"
               accessibilityLabel="Search a bill, official, topic, or political term"
             />
+            {/* The result card carries a "Clear" link, but it sits in a header
+                the reader has to find. This is where people look to dismiss a
+                search, and it stays on screen because a search scrolls here. */}
+            {query.length > 0 || activeQuery ? (
+              <Pressable
+                onPress={clearSearch}
+                hitSlop={10}
+                accessibilityRole="button"
+                accessibilityLabel="Clear search"
+                style={styles.clearBtn}
+              >
+                <X size={15} color="#5D6670" strokeWidth={2.4} />
+              </Pressable>
+            ) : null}
           </View>
         </View>
 
@@ -473,6 +512,16 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
   searchInput: { flex: 1, minWidth: 0, fontSize: 13.5, lineHeight: 19, fontWeight: "400", color: "#101418" },
+  // Circular so it reads as a dismiss control rather than a bare glyph, and
+  // sized to stay comfortably tappable inside a 44pt field.
+  clearBtn: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#EDEFF1",
+  },
 
   section: { marginTop: 22 },
   strip: { columnGap: 12 },
