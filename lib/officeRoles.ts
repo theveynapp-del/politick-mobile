@@ -17,6 +17,12 @@ import { RepLevel } from "./types";
  * boards — `varies` says so rather than picking the most common arrangement
  * and stating it as fact.
  *
+ * Wording is deliberately flat. An earlier pass called the governorship "the
+ * single most powerful official over daily life" and zoning "the single
+ * biggest lever government has over housing costs" — the first is an opinion
+ * and the second is one side of a live housing argument. Superlatives and
+ * contested causal claims are out; what the office structurally does stays.
+ *
  * `limits` is deliberately part of the shape. Knowing that your member of
  * Congress cannot change your property tax is often the single most useful
  * thing on the screen, and it is the part no official source ever prints.
@@ -39,9 +45,9 @@ export interface OfficeProfile {
 const FEDERAL_SENATE: OfficeProfile = {
   title: "United States Senator",
   summary:
-    "One of two senators for your entire state. Every state gets two regardless of population, so a voter in Wyoming has far more Senate influence per person than one in California.",
+    "One of two senators for your entire state. Every state elects two, whether it has 600,000 residents or 39 million.",
   decides: [
-    "Votes on every federal bill, and can block one almost single-handedly through the filibuster",
+    "Votes on every federal bill, and can delay one through procedural holds — though ending a filibuster takes 60 votes",
     "Confirms federal judges — including Supreme Court justices, who serve for life",
     "Confirms Cabinet secretaries, agency heads and ambassadors",
     "Ratifies treaties with other countries",
@@ -100,7 +106,7 @@ const STATE_LOWER: OfficeProfile = {
 const GOVERNOR: OfficeProfile = {
   title: "Governor",
   summary:
-    "Your state's chief executive. In practice the single most powerful official over daily life in the state.",
+    "Your state's chief executive, and the only official who can stop a bill the legislature has already passed.",
   decides: [
     "Signs or vetoes every bill the legislature passes",
     "Proposes the state budget, which frames the entire year's argument",
@@ -128,7 +134,7 @@ const LT_GOVERNOR: OfficeProfile = {
 const ATTORNEY_GENERAL: OfficeProfile = {
   title: "State Attorney General",
   summary:
-    "Your state's chief legal officer, and increasingly one of the most consequential offices on the ballot — state AGs are who sue or defend against federal policy.",
+    "Your state's chief legal officer. This is the office that decides whether the state sues, or defends itself against, the federal government and other states.",
   decides: [
     "Which cases the state brings or defends, including suits against the federal government or other states",
     "Consumer protection enforcement — fraud, price-fixing, deceptive practices",
@@ -141,7 +147,7 @@ const ATTORNEY_GENERAL: OfficeProfile = {
 const SECRETARY_OF_STATE: OfficeProfile = {
   title: "Secretary of State",
   summary:
-    "In most states, the official who runs elections — which makes this a quiet office with unusually direct consequences.",
+    "In most states, this is the office that runs elections.",
   decides: [
     "Voter registration systems and voter roll maintenance",
     "Certification of election results",
@@ -194,7 +200,7 @@ const COUNCIL: OfficeProfile = {
   summary:
     "The closest elected office to you, deciding the things you actually see — and usually the lowest-turnout race on the ballot.",
   decides: [
-    "Zoning and land use, which is the single biggest lever government has over housing costs",
+    "Zoning and land use — what can be built where, and how much of it",
     "The city or county budget, including how much goes to police, fire and transit",
     "Local ordinances — noise, short-term rentals, parking, business rules",
     "Property tax rates, in many jurisdictions",
@@ -236,7 +242,7 @@ const SHERIFF: OfficeProfile = {
 const DISTRICT_ATTORNEY: OfficeProfile = {
   title: "District Attorney",
   summary:
-    "Decides who gets charged with a crime and with what — arguably the most consequential office on a local ballot, and one of the least watched.",
+    "Decides who gets charged with a crime and with what. Most criminal cases are resolved by this office rather than by a trial.",
   decides: [
     "Which arrests become criminal charges, and which are dropped",
     "What a person is charged with, which sets the possible sentence before any trial",
