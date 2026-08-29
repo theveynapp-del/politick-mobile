@@ -15,14 +15,14 @@
 # screenshot, and it is also the argument for shipping iPhone-only.
 #
 # Usage:  bash assets/screenshots/capture-ipad.sh
-# Output: ~/Desktop/politick-screenshots-ipad/
+# Output: ~/Desktop/rotunda-screenshots-ipad/
 # =============================================================================
 set -euo pipefail
 
 CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 PAGE="file://$HERE/frames.html"
-OUT="$HOME/Desktop/politick-screenshots-ipad"
+OUT="$HOME/Desktop/rotunda-screenshots-ipad"
 
 if [ ! -x "$CHROME" ]; then
   echo "ERROR: Google Chrome not found at:"

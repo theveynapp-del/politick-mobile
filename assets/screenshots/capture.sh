@@ -14,7 +14,7 @@
 # not, which is the entire reason it exists.
 #
 # Usage:  bash assets/screenshots/capture.sh
-# Output: ~/Desktop/politick-screenshots/
+# Output: ~/Desktop/rotunda-screenshots/
 # =============================================================================
 set -euo pipefail
 
@@ -28,7 +28,7 @@ if [ "${CAPTURE_65:-0}" = "1" ]; then
 else
   CSS_W=428; CSS_H=926; LABEL="1284x2778 (6.7\")"
 fi
-OUT="$HOME/Desktop/politick-screenshots"
+OUT="$HOME/Desktop/rotunda-screenshots"
 
 if [ ! -x "$CHROME" ]; then
   echo "ERROR: Google Chrome not found at:"
