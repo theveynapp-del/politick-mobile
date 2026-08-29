@@ -17,7 +17,7 @@ import { Story } from "@/lib/types";
  * that screen without anyone having reviewed it.
  */
 
-/** "image" uses real photography; "fallback" uses the Politick placeholder;
+/** "image" uses real photography; "fallback" uses the Rotunda placeholder;
  *  "none" drops the media column and lets the copy run the full card width. */
 export type MediaVariant = "image" | "fallback" | "none";
 
@@ -36,7 +36,7 @@ export function StoryCard({
   const mediaSize = tight ? 80 : 84;
 
   // Three tiers, most specific first: the story's own photograph, then a real
-  // photo for its topic, then the Politick placeholder.
+  // photo for its topic, then the Rotunda placeholder.
   const [remoteFailed, setRemoteFailed] = useState(false);
   const remote = !remoteFailed && story.imageUrl ? story.imageUrl : null;
   const topical = remote ? null : topicImageFor(story.topic);

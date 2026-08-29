@@ -1,4 +1,4 @@
-// Federal coverage: recent congressional activity as Politick stories.
+// Federal coverage: recent congressional activity as Rotunda stories.
 //
 // Ports scripts/sync-congress.ts to an Edge Function so it can run on a
 // schedule instead of only when someone types npm run sync:congress. Two

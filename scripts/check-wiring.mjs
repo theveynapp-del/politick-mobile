@@ -36,12 +36,13 @@ const checks = [
     name: "Onboarding uses the real logo and illustration assets",
     why: "These are image files, not code — a replace can drop them and the screen silently falls back.",
     file: "app/onboarding.tsx",
-    mustContain: ["politick-logo-lockup.png", "onboarding-welcome.jpg"],
+    mustContain: ["rotunda-logo-lockup.png", "onboarding-welcome.jpg"],
   },
 ];
 
 const requiredFiles = [
-  { path: "assets/politick-logo-lockup.png", why: "approved logo lockup" },
+  { path: "assets/rotunda-logo-lockup.png", why: "approved logo lockup" },
+  { path: "assets/rotunda-emblem.png", why: "mark used inline on Explore, Reps and Saved" },
   { path: "assets/onboarding-welcome.jpg", why: "onboarding illustration" },
   { path: "eas.json", why: "production build profile / build-number auto-increment" },
 ];

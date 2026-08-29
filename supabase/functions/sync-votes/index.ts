@@ -64,7 +64,7 @@ function tag(xml: string, name: string): string | null {
 }
 
 const SENATE_HEADERS = {
-  "User-Agent": "PolitickBot/1.0 (+https://politickapp.com; civic data ingest)",
+  "User-Agent": "RotundaBot/1.0 (+https://rotundaapp.com; civic data ingest)",
   Accept: "application/xml,text/xml,*/*",
 };
 

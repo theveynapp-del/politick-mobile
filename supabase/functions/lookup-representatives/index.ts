@@ -91,7 +91,7 @@ const PROBE_TIMEOUT_MS = 3000;
 async function imageLoads(url: string): Promise<boolean> {
   try {
     const res = await fetch(url, {
-      headers: { Range: "bytes=0-0", "User-Agent": "Mozilla/5.0 (compatible; PolitickApp/1.0)" },
+      headers: { Range: "bytes=0-0", "User-Agent": "Mozilla/5.0 (compatible; RotundaApp/1.0)" },
       signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
     });
     return res.ok && (res.headers.get("content-type") ?? "").startsWith("image/");
@@ -116,7 +116,7 @@ async function wikipediaPortrait(name: string, stateName: string, title: string)
     try {
       const slug = encodeURIComponent(candidate.replace(/ /g, "_"));
       const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${slug}`, {
-        headers: { "User-Agent": "PolitickApp/1.0 (civic information app)" },
+        headers: { "User-Agent": "RotundaApp/1.0 (civic information app)" },
         signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
       });
       if (!res.ok) continue;

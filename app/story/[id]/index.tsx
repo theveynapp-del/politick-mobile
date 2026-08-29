@@ -77,7 +77,7 @@ export default function StoryDetailScreen() {
           ) : (
             <StoryPlaceholder style={styles.heroImage} />
           )}
-          <Text style={styles.byline}>Politick Editorial Desk</Text>
+          <Text style={styles.byline}>Rotunda Editorial Desk</Text>
         </View>
 
         <View style={styles.segmented}>

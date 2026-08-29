@@ -24,7 +24,7 @@ Lost this way so far:
 
 1. Extract it somewhere else — never straight over this folder.
 2. Diff it against the working tree and read every deletion:
-   `diff -rq /tmp/incoming/politick-mobile . -x .git -x node_modules`
+   `diff -rq /tmp/incoming/rotunda-mobile . -x .git -x node_modules`
 3. Copy in only the files that genuinely changed. Do not `rsync --delete`, and
    do not `cp -R` over `.git` (that corrupted HEAD and the remote once).
 4. Run `npm run check:wiring` and `npx tsc --noEmit` before committing.
@@ -52,7 +52,7 @@ representative for the wrong district.
 
 # Neutral voice
 
-Politick describes government; it does not argue about it. That holds for every
+Rotunda describes government; it does not argue about it. That holds for every
 word a reader sees — hand-written copy, model prompts, empty states, headlines.
 Sourcing rules alone are not enough: a sentence can be perfectly sourced and
 still be persuasion.

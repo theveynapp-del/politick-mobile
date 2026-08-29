@@ -1,5 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+// The "politick." prefix is deliberate and must not be renamed with the brand.
+// These are AsyncStorage keys on devices that already have the app installed:
+// changing them orphans every existing reader's ZIP, name, topics and
+// onboarding state, and the app would greet a returning user as brand new.
+// A rename here is a data migration, not a find-and-replace.
 const KEYS = {
   onboardingComplete: "politick.onboardingComplete",
   zip: "politick.zip",

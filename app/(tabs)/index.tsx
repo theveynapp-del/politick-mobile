@@ -88,10 +88,10 @@ export default function TodayScreen() {
                 gold dot and letterforms identical to onboarding rather than
                 approximating them with a system font. */}
             <Image
-              source={require("@/assets/politick-logo-lockup.png")}
+              source={require("@/assets/rotunda-logo-lockup.png")}
               style={styles.wordmark}
               resizeMode="contain"
-              accessibilityLabel="Politick"
+              accessibilityLabel="Rotunda"
             />
             {locationLabel ? (
               <View style={styles.locationPill} accessibilityLabel={`Your location: ${locationLabel}`}>

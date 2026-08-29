@@ -1,7 +1,7 @@
 import { View, Image, StyleSheet, StyleProp, ViewStyle } from "react-native";
 
 /**
- * The Politick placeholder for stories that ship without a photograph.
+ * The Rotunda placeholder for stories that ship without a photograph.
  *
  * The same cream is baked into the asset's background, so a slot wider or
  * taller than the artwork letterboxes seamlessly instead of showing a seam

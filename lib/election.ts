@@ -4,7 +4,7 @@ import { Representative } from "./types";
  * What the reader is voting for, and nothing beyond that.
  *
  * Everything here is either constitutional structure or a sourced list. There
- * are deliberately no candidates: Politick has no entitled ballot source yet,
+ * are deliberately no candidates: Rotunda has no entitled ballot source yet,
  * and a partial candidate list is worse than none — a voter who trusts an
  * incomplete ballot is harmed more than one who was told we don't have it.
  */

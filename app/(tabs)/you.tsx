@@ -209,10 +209,10 @@ export default function YouScreen() {
               version and, later, the About and legal links live. */}
           <View style={styles.brandFooter}>
             <Image
-              source={require("@/assets/politick-logo-lockup.png")}
+              source={require("@/assets/rotunda-logo-lockup.png")}
               style={styles.footerMark}
               resizeMode="contain"
-              accessibilityLabel="Politick"
+              accessibilityLabel="Rotunda"
             />
             <Text style={styles.footerVersion}>
               Version {Constants.expoConfig?.version ?? "—"}
@@ -332,7 +332,7 @@ function EditProfileModal({
           <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.modalTitle}>Your name</Text>
             <Text style={styles.modalBody}>
-              Used to greet you on Today. Stored on this device only — Politick has no account
+              Used to greet you on Today. Stored on this device only — Rotunda has no account
               to sign in to.
             </Text>
 

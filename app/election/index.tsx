@@ -169,7 +169,7 @@ export default function ElectionCenterScreen() {
           <Text style={styles.footnote}>
             Registration deadlines, polling places and what appears on your specific ballot are set
             by your state and county. Their election office is the only authoritative source, and
-            Politick doesn&rsquo;t replace it.
+            Rotunda doesn&rsquo;t replace it.
           </Text>
         </ScrollView>
       )}

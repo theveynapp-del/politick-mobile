@@ -1,6 +1,6 @@
-# Politick — Mobile (Expo / React Native)
+# Rotunda — Mobile (Expo / React Native)
 
-A native companion to the [Politick web app](https://github.com/theveynapp-del/politick-app),
+A native companion to the [Rotunda web app](https://github.com/theveynapp-del/rotunda-app),
 sharing the same Supabase backend. Built with Expo Router, TypeScript, and the same
 design tokens/product principles as web — ported to React Native primitives since
 there's no CSS to reuse directly.
@@ -15,7 +15,7 @@ npm run ios      # requires macOS + Xcode
 npm run android  # requires Android Studio / an emulator
 ```
 
-`.env` already has the real Politick Supabase project credentials filled in
+`.env` already has the real Rotunda Supabase project credentials filled in
 (same project as the web app — one backend, two clients). `.env.example` is
 the template; `.env` is gitignored.
 

@@ -17,7 +17,7 @@
  *   killing is exploitative and can misrepresent the event. These use the
  *   article's own photo or none at all.
  *
- * Anything unmapped falls back to the Politick placeholder, which is honest
+ * Anything unmapped falls back to the Rotunda placeholder, which is honest
  * about being branding rather than a photograph of the story.
  */
 export const topicImages: Record<string, number> = {

@@ -1,4 +1,4 @@
-// Local coverage: turns Curate's local-government documents into Politick
+// Local coverage: turns Curate's local-government documents into Rotunda
 // stories for the towns we actually serve.
 //
 // Curate scans agendas and minutes from ~12,000 cities, counties and school

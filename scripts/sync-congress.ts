@@ -1,5 +1,5 @@
 /**
- * Real data ingestion from Congress.gov API v3 into the Politick Supabase schema.
+ * Real data ingestion from Congress.gov API v3 into the Rotunda Supabase schema.
  *
  * Run with: npm run sync:congress
  *
@@ -15,7 +15,7 @@
  * HONEST LIMITATION, not glossed over: Congress.gov's API gives us real, verified
  * facts — title, sponsor, cosponsor count, latest action, status, the bill's own
  * primary-source URL. It does NOT give us "why this matters to you" — that's real
- * editorial synthesis, which the Politick editorial policy requires to be human-
+ * editorial synthesis, which the Rotunda editorial policy requires to be human-
  * reviewed regardless of whether a human or an AI drafts the first pass. This
  * script leaves `why_it_matters` and `zip_note` as an explicit placeholder string
  * rather than fabricating something that reads like real analysis — search for

@@ -185,7 +185,7 @@ export default function ExploreScreen() {
         <View style={{ paddingHorizontal: gutter }}>
           <View style={styles.titleRow}>
             <Image
-              source={require("@/assets/politick-emblem.png")}
+              source={require("@/assets/rotunda-emblem.png")}
               style={styles.emblem}
               resizeMode="contain"
               accessibilityLabel=""
@@ -495,7 +495,7 @@ const styles = StyleSheet.create({
 
   // Brand mark inline with the title, so it costs no vertical space — the
   // screen title keeps doing the wayfinding and the emblem just makes sure
-  // Politick is present if the screen is ever screenshotted.
+  // Rotunda is present if the screen is ever screenshotted.
   titleRow: { flexDirection: "row", alignItems: "center", columnGap: 9 },
   emblem: { width: 24, height: 24 },
   title: { fontSize: 26, lineHeight: 32, fontWeight: "700", letterSpacing: -0.5, color: "#101418" },

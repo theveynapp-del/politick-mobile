@@ -1,6 +1,6 @@
 /**
  * Real data ingestion from the 5 Calls Representatives API into the
- * Politick Supabase schema.
+ * Rotunda Supabase schema.
  *
  * Run with: npm run sync:reps -- 20814
  * (pass one or more ZIP codes as args — this only fetches reps for ZIPs

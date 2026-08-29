@@ -1,10 +1,10 @@
-# Politick - Claude Code UI Refresh Guide
+# Rotunda - Claude Code UI Refresh Guide
 
-> **Visual source of truth:** `public/politick-approved-mockups.png`
+> **Visual source of truth:** `public/rotunda-approved-mockups.png`
 
 ## Non-negotiable direction
 
-Reproduce the approved mockup rather than redesigning it. Politick is a calm civic utility: editorial, neutral, plain-language and useful. No red-vs-blue identity, flags, stars, Capitol decoration, gavels, eagles, glossy gradients, glassmorphism or cable-news urgency.
+Reproduce the approved mockup rather than redesigning it. Rotunda is a calm civic utility: editorial, neutral, plain-language and useful. No red-vs-blue identity, flags, stars, Capitol decoration, gavels, eagles, glossy gradients, glassmorphism or cable-news urgency.
 
 ## Brand tokens
 
@@ -115,9 +115,9 @@ Reproduce the approved mockup rather than redesigning it. Politick is a calm civ
 ## Claude kickoff prompt
 
 ```text
-Read this UI guide and inspect `public/politick-approved-mockups.png` before changing code. Treat the mockup image as the visual source of truth. Refresh the Politick UI to match it exactly; do not redesign, rebrand or substitute a generic political-news aesthetic.
+Read this UI guide and inspect `public/rotunda-approved-mockups.png` before changing code. Treat the mockup image as the visual source of truth. Refresh the Rotunda UI to match it exactly; do not redesign, rebrand or substitute a generic political-news aesthetic.
 
-Build the token layer and shared components first, then implement every route at a 390 x 844 viewport. Use the approved Paper, White, Civic Ink, Civic Teal, Deep Teal, Slate, Signal Gold and Warm Sand palette. Use Inter, 20 px mobile gutters, 16 px cards, restrained 1 px borders and minimal shadows. Keep the lowercase politick wordmark and one gold signal dot.
+Build the token layer and shared components first, then implement every route at a 390 x 844 viewport. Use the approved Paper, White, Civic Ink, Civic Teal, Deep Teal, Slate, Signal Gold and Warm Sand palette. Use Inter, 20 px mobile gutters, 16 px cards, restrained 1 px borders and minimal shadows. Keep the lowercase rotunda wordmark and one gold signal dot.
 
 Implement onboarding, Today / Daily 5, Everyday story detail, Go Deeper, Sources, representative profile, Explore, Saved and Profile. Preserve the exact hierarchy, spacing, card composition and bottom navigation shown in the reference. Do not add flags, stars, Capitol imagery, red-versus-blue framing, glossy gradients, glassmorphism or breaking-news visual urgency.
 

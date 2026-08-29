@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Politick",
+    "name": "Rotunda",
     "slug": "politick-mobile",
     "scheme": "politick",
     "version": "1.0.0",
@@ -21,7 +21,7 @@
     "android": {
       "package": "app.politick.mobile",
       "adaptiveIcon": {
-        "backgroundColor": "#0C555F",
+        "backgroundColor": "#0D5F5B",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"

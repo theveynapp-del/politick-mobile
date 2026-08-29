@@ -216,10 +216,10 @@ export default function OnboardingScreen() {
           {/* Approved horizontal logo lockup, used as a single image asset so
               emblem geometry, gold dots, and wordmark typography stay locked. */}
           <Image
-            source={require("@/assets/politick-logo-lockup.png")}
+            source={require("@/assets/rotunda-logo-lockup.png")}
             style={styles.welcomeLogo}
             resizeMode="contain"
-            accessibilityLabel="Politick"
+            accessibilityLabel="Rotunda"
           />
           <Text style={styles.bodyMuted}>{"Understand what’s happening.\nKnow what it means for you."}</Text>
           <View style={styles.illustrationArea}>
@@ -474,7 +474,7 @@ export default function OnboardingScreen() {
             </View>
 
             <Text style={styles.signalSectionLabel}>CHOOSE YOUR SIGNAL</Text>
-            <Text style={styles.signalHeadline}>What should Politick prioritize?</Text>
+            <Text style={styles.signalHeadline}>What should Rotunda prioritize?</Text>
             <Text style={styles.signalSupporting}>
               Select a few topics. You&rsquo;ll still receive a balanced daily briefing.
             </Text>

@@ -204,7 +204,7 @@ Deno.serve(async (req: Request) => {
       const res = await fetch(
         `https://en.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(title)}&prop=wikitext&format=json&formatversion=2`,
         {
-          headers: { "User-Agent": "PolitickBot/1.0 (+https://politickapp.com; civic app ingest)" },
+          headers: { "User-Agent": "RotundaBot/1.0 (+https://rotundaapp.com; civic app ingest)" },
           signal: AbortSignal.timeout(20000),
         }
       );

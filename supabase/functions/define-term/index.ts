@@ -19,7 +19,7 @@ const CORS_HEADERS = {
 const MAX_QUERY_LENGTH = 120;
 const NOT_CIVIC = "NOT_CIVIC";
 
-const SYSTEM = `You define civic, legal, governmental and public-policy terms for readers of Politick, a nonpartisan US civics app.
+const SYSTEM = `You define civic, legal, governmental and public-policy terms for readers of Rotunda, a nonpartisan US civics app.
 
 Given a term or a question about one, explain in 2-4 short plain sentences:
 - what the term means

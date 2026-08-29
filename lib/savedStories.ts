@@ -1,5 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+// Deliberately still "politick." — renaming this AsyncStorage key would drop
+// every saved story on devices that already have the app. See lib/onboarding.ts.
 const KEY = "politick.savedStoryIds";
 
 export async function getSavedIds(): Promise<string[]> {
