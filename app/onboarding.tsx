@@ -626,9 +626,20 @@ const styles = StyleSheet.create({
   // 28px matches onboarding 2, 3 and 5, so the text edge doesn't shift as
   // you move through the flow.
   welcomeWrap: { flex: 1, paddingHorizontal: 28, paddingTop: 24, paddingBottom: 20 },
-  // 228 x 66 preserves the asset's exact 1000:287 aspect ratio, within the
-  // spec's 220–235px lockup width.
-  welcomeLogo: { width: 228, height: 66, marginTop: 2, marginBottom: 14 },
+  // aspectRatio rather than a hard height: the previous 228 x 66 was the old
+  // lockup's 1000:287, and when the Rotunda asset came in at 1000:333 nobody
+  // remeasured. resizeMode "contain" hid it — the mark just rendered ~198pt
+  // wide inside a 228pt box instead of distorting. Deriving height from the
+  // real ratio means a future asset swap can't reintroduce that.
+  // maxWidth caps it at 288; the 100% lets it shrink on a 320pt screen, where
+  // a fixed 288 plus the wrap's 56pt of padding would overflow.
+  welcomeLogo: {
+    width: "100%",
+    maxWidth: 288,
+    aspectRatio: 1000 / 333,
+    marginTop: 2,
+    marginBottom: 16,
+  },
   eyebrow: { fontSize: 11, fontWeight: "800", letterSpacing: 1.2, color: color.brand.deepTeal },
   h1: { fontSize: 30, fontWeight: "800", color: color.light.ink, marginTop: 8, marginBottom: 10, letterSpacing: -0.5 },
   bodyMuted: { fontSize: 15.5, color: color.light.muted, lineHeight: 22 },

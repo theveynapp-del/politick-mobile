@@ -208,7 +208,10 @@ const styles = StyleSheet.create({
   // 112x32 keeps the lockup's 1000:287 aspect ratio. Smaller than before so the
   // location pill fits the header row at 375 without either being truncated;
   // it also matches the lockup's share of width in the reference.
-  wordmark: { width: 112, height: 32 },
+  // Height is the anchor in a header row; width follows the asset's real
+  // 1000:333. The old 112 x 32 was 3.5:1 against a 3.0:1 image, so "contain"
+  // rendered it 96pt wide and left 16pt of dead box shoving the row along.
+  wordmark: { height: 32, aspectRatio: 1000 / 333 },
   // Keeps the spec's 44px touch target while alignItems lands the 24px glyph on
   // the gutter. The 20px of slack that leaves to the glyph's left read as a gap
   // from the pill, so the box is pulled back over it — the pill isn't

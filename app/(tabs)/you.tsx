@@ -462,7 +462,9 @@ const styles = StyleSheet.create({
   divider: { height: 1, marginLeft: 46, backgroundColor: "#E7E9EC" },
 
   brandFooter: { marginTop: 34, alignItems: "center" },
-  footerMark: { width: 100, height: 29 },
+  // Same stale ratio as the header had: 100 x 29 is 3.45:1 against a 3.0:1
+  // asset. Height anchors, width follows.
+  footerMark: { height: 29, aspectRatio: 1000 / 333 },
   footerVersion: { marginTop: 8, fontSize: 12, lineHeight: 16, fontWeight: "500", color: "#8A929A" },
 
   soonPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, backgroundColor: "#EEE9DE" },
