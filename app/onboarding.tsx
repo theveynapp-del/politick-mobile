@@ -626,20 +626,20 @@ const styles = StyleSheet.create({
   // 28px matches onboarding 2, 3 and 5, so the text edge doesn't shift as
   // you move through the flow.
   welcomeWrap: { flex: 1, paddingHorizontal: 28, paddingTop: 24, paddingBottom: 20 },
-  // aspectRatio rather than a hard height: the previous 228 x 66 was the old
-  // lockup's 1000:287, and when the Rotunda asset came in at 1000:333 nobody
-  // remeasured. resizeMode "contain" hid it — the mark just rendered ~198pt
-  // wide inside a 228pt box instead of distorting. Deriving height from the
-  // real ratio means a future asset swap can't reintroduce that.
-  // maxWidth caps it at 288; the 100% lets it shrink on a 320pt screen, where
-  // a fixed 288 plus the wrap's 56pt of padding would overflow.
-  welcomeLogo: {
-    width: "100%",
-    maxWidth: 288,
-    aspectRatio: 1000 / 333,
-    marginTop: 2,
-    marginBottom: 16,
-  },
+  // 264x88 is the asset's real 1000:333, up from a 228x66 box cut for the old
+  // lockup's 1000:287 — which, under resizeMode "contain", quietly rendered the
+  // mark at ~198pt instead of distorting it.
+  //
+  // Both axes are literal numbers. No lockup in this app uses aspectRatio: it
+  // only substitutes for a missing dimension when the other one is definite,
+  // and whether a dimension is definite depends on the parent's flexDirection
+  // and alignItems — easy to get wrong, and invisible until it ships. It
+  // shipped wrong once, in build 19. (illustrationWrap below still uses it, on
+  // a View whose width is stretched by the column parent — the safe case.)
+  //
+  // 264 is the widest that still fits a 320pt screen after this wrap's 56pt of
+  // horizontal padding, so it needs no percentage or cap to stay on-screen.
+  welcomeLogo: { width: 264, height: 88, marginTop: 2, marginBottom: 16 },
   eyebrow: { fontSize: 11, fontWeight: "800", letterSpacing: 1.2, color: color.brand.deepTeal },
   h1: { fontSize: 30, fontWeight: "800", color: color.light.ink, marginTop: 8, marginBottom: 10, letterSpacing: -0.5 },
   bodyMuted: { fontSize: 15.5, color: color.light.muted, lineHeight: 22 },

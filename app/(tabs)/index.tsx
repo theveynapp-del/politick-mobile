@@ -205,13 +205,17 @@ const styles = StyleSheet.create({
   scrollArea: { paddingBottom: 96 },
 
   brandRow: { flexDirection: "row", alignItems: "center", columnGap: 10, paddingTop: 12 },
-  // 112x32 keeps the lockup's 1000:287 aspect ratio. Smaller than before so the
-  // location pill fits the header row at 375 without either being truncated;
-  // it also matches the lockup's share of width in the reference.
-  // Height is the anchor in a header row; width follows the asset's real
-  // 1000:333. The old 112 x 32 was 3.5:1 against a 3.0:1 image, so "contain"
-  // rendered it 96pt wide and left 16pt of dead box shoving the row along.
-  wordmark: { height: 32, aspectRatio: 1000 / 333 },
+  // 96x32 is the asset's real 1000:333 at a 32pt row height. Both dimensions are
+  // explicit on purpose.
+  //
+  // This was briefly { height: 32, aspectRatio: 1000/333 }, which broke the screen:
+  // brandRow is flexDirection row, so with no definite width Yoga resolves the
+  // image's main-axis size from its intrinsic width — 1000px — and then derives
+  // height from that instead of from the 32 above. The lockup rendered enormous
+  // and the wordmark ran off the edge. aspectRatio only substitutes for the
+  // missing dimension when the other one is actually definite; in a row, height
+  // is the cross axis and does not make width definite.
+  wordmark: { width: 96, height: 32 },
   // Keeps the spec's 44px touch target while alignItems lands the 24px glyph on
   // the gutter. The 20px of slack that leaves to the glyph's left read as a gap
   // from the pill, so the box is pulled back over it — the pill isn't

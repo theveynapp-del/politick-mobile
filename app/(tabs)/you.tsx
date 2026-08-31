@@ -462,9 +462,12 @@ const styles = StyleSheet.create({
   divider: { height: 1, marginLeft: 46, backgroundColor: "#E7E9EC" },
 
   brandFooter: { marginTop: 34, alignItems: "center" },
-  // Same stale ratio as the header had: 100 x 29 is 3.45:1 against a 3.0:1
-  // asset. Height anchors, width follows.
-  footerMark: { height: 29, aspectRatio: 1000 / 333 },
+  // 87x29 is the asset's real 1000:333. Explicit on both axes, for the same
+  // reason as the Today header's wordmark: brandFooter is a column with
+  // alignItems center, so the child's width is auto rather than stretched, and
+  // an aspectRatio with no definite width resolves against the image's
+  // intrinsic 1000px instead of the height set here.
+  footerMark: { width: 87, height: 29 },
   footerVersion: { marginTop: 8, fontSize: 12, lineHeight: 16, fontWeight: "500", color: "#8A929A" },
 
   soonPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, backgroundColor: "#EEE9DE" },
